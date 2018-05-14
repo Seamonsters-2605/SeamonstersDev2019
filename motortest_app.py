@@ -1,3 +1,4 @@
+import sys
 import remi
 import remi.gui as gui
 import queue
@@ -124,4 +125,11 @@ class MotorTester(remi.App):
         return queueTheEvent
 
 def main(robot, appCallback):
-    remi.start(MotorTester, userdata=(robot, appCallback,))
+    if sys.argv[1] == 'sim':
+        remi.start(MotorTester, userdata=(robot, appCallback,))
+    elif sys.argv[1] == 'depoly':
+        pass
+    elif sys.argv[1] == 'run':
+        remi.start(MotorTester, start_browser=False, address='10.26.5.2',
+                   port=5805, websocket_port=5806,
+                   userdata=(robot, appCallback,))
