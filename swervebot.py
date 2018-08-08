@@ -54,7 +54,7 @@ class SwerveBot(sea.GeneratorBot):
             mag = sea.deadZone(self.joystick.getMagnitude())
             mag *= 5 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() - math.pi/2
-            turn = sea.deadZone(self.joystick.getTwist()
+            turn = sea.deadZone(self.joystick.getTwist())
             turn *= math.radians(90) # maximum radians per second
 
             self.superDrive.drive(mag, direction, turn)
