@@ -66,6 +66,8 @@ class MotorTestBot(sea.GeneratorBot):
     def updateTalonLog(self):
         talon = self.talon
         try:
+            self.app.selectedTalonLbl.set_text(
+                str(talon.getDeviceID()))
             self.app.outputVoltageLbl.set_text(
                 str(talon.getMotorOutputVoltage()))
             self.app.outputCurrentLbl.set_text(

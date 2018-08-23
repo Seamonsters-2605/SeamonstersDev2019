@@ -42,6 +42,12 @@ class MotorTester(remi.App):
             talonBox
         )))
 
+        self.selectedTalonLbl = gui.Label('')
+        root.append(HBoxWith((
+            gui.Label('Selected talon:&nbsp;'),
+            self.selectedTalonLbl
+        )))
+
         self.outputVoltageLbl = gui.Label('')
         root.append(HBoxWith((
             gui.Label('Output voltage:&nbsp;'),
