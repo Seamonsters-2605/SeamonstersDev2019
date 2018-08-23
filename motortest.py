@@ -7,7 +7,8 @@ import motortest_app
 class MotorTestBot(sea.GeneratorBot):
 
     def robotInit(self):
-        self.talons = [ctre.WPI_TalonSRX(i) for i in range(0,19)]
+        self.talons = [ctre.WPI_TalonSRX(i)
+            for i in range(0, motortest_app.MotorTester.MAX_TALON + 1)]
         for talon in self.talons:
             talon.configSelectedFeedbackSensor(
                 ctre.FeedbackDevice.QuadEncoder, 0, 0)
