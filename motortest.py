@@ -7,11 +7,7 @@ import motortest_app
 class MotorTestBot(sea.GeneratorBot):
 
     def robotInit(self):
-        self.talons = [ctre.WPI_TalonSRX(i)
-            for i in range(0, motortest_app.MotorTester.MAX_TALON + 1)]
-        for talon in self.talons:
-            talon.configSelectedFeedbackSensor(
-                ctre.FeedbackDevice.QuadEncoder, 0, 0)
+        self.talons = { } # dictionary, maps talon number to WPI_TalonSRX object
 
         self.joy = wpilib.Joystick(0)
 
@@ -32,7 +28,7 @@ class MotorTestBot(sea.GeneratorBot):
         while not self.app.eventQueue.empty():
             self.app.eventQueue.get()
 
-        self.talon = self.talons[int(self.app.talonBox.get_value())]
+        self._setTalonNumber(int(self.app.talonBox.get_value()))
 
         while True:
             yield
@@ -41,11 +37,18 @@ class MotorTestBot(sea.GeneratorBot):
                 event()
             self.updateTalonLog()
 
+    def _setTalonNumber(self, n):
+        if n in self.talons:
+            self.talon = self.talons[n]
+        else:
+            self.talon = ctre.WPI_TalonSRX(n)
+            self.talon.configSelectedFeedbackSensor(
+                ctre.FeedbackDevice.QuadEncoder, 0, 0)
+            self.talons[n] = self.talon
+
     def c_setTalon(self, widget, value):
         self.talon.disable()
-        try:
-            self.talon = self.talons[int(value)]
-        except IndexError: pass
+        self._setTalonNumber(int(value))
 
     def c_updateDisabled(self):
         self.talon.disable()

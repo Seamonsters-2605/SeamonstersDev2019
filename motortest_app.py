@@ -17,8 +17,6 @@ def VBoxWith(contents, **kwargs):
 
 class MotorTester(remi.App):
 
-    MAX_TALON = 19
-
     def __init__(self, *args):
         self.eventQueue = queue.Queue()
 
@@ -35,7 +33,7 @@ class MotorTester(remi.App):
         title.style['font-weight'] = 'bold'
         root.append(title)
 
-        self.talonBox = gui.SpinBox(default_value='0', min=0, max=MotorTester.MAX_TALON, step=1)
+        self.talonBox = gui.SpinBox(default_value='0', min=0, max=99, step=1)
         self.talonBox.set_on_change_listener(self.queuedEvent(robot.c_setTalon))
         root.append(HBoxWith((
             gui.Label('Talon:&nbsp;'),
