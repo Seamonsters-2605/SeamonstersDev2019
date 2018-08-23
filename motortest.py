@@ -32,7 +32,7 @@ class MotorTestBot(sea.GeneratorBot):
         while not self.app.eventQueue.empty():
             self.app.eventQueue.get()
 
-        self.talon = self.talons[0]
+        self.talon = self.talons[int(self.app.talonBox.get_value())]
 
         while True:
             yield

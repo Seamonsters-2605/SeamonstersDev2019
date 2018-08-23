@@ -35,11 +35,11 @@ class MotorTester(remi.App):
         title.style['font-weight'] = 'bold'
         root.append(title)
 
-        talonBox = gui.SpinBox(default_value='0', min=0, max=MotorTester.MAX_TALON, step=1)
-        talonBox.set_on_change_listener(self.queuedEvent(robot.c_setTalon))
+        self.talonBox = gui.SpinBox(default_value='0', min=0, max=MotorTester.MAX_TALON, step=1)
+        self.talonBox.set_on_change_listener(self.queuedEvent(robot.c_setTalon))
         root.append(HBoxWith((
             gui.Label('Talon:&nbsp;'),
-            talonBox
+            self.talonBox
         )))
 
         self.selectedTalonLbl = gui.Label('')
