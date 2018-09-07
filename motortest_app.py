@@ -138,5 +138,5 @@ def main(robot, appCallback):
         pass
     elif sys.argv[1] == 'run':
         remi.start(MotorTester, start_browser=False, address='10.26.5.2',
-                   port=5805, websocket_port=5806,
+                   port=5805,
                    userdata=(robot, appCallback,))
