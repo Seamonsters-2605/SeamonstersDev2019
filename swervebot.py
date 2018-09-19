@@ -23,10 +23,10 @@ class SwerveBot(sea.GeneratorBot):
 
         wheelADrive = sea.AngledWheel(wheelADriveTalon,.75, .75, 0,
                                       encoderCountsPerFoot=31291.1352,
-                                      maxVoltageVelocity=12)
+                                      maxVoltageVelocity=16)
         wheelBDrive = sea.AngledWheel(wheelBDriveTalon,-.75,.75,0,
                                       encoderCountsPerFoot=31291.1352,
-                                      maxVoltageVelocity=12)
+                                      maxVoltageVelocity=16)
 
         wheelARotate = sea.SwerveWheel(wheelADrive, wheelARotateTalon,
                                        1612.8, True)
@@ -44,7 +44,7 @@ class SwerveBot(sea.GeneratorBot):
     def teleop(self):
         while True:
             mag = sea.deadZone(self.joystick.getMagnitude())
-            mag *= 4 # maximum feet per second
+            mag *= 3 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() - math.pi/2
             turn = sea.deadZone(self.joystick.getRawAxis(3))
             turn *= math.radians(120) # maximum radians per second
@@ -52,14 +52,17 @@ class SwerveBot(sea.GeneratorBot):
             self.superDrive.drive(mag, direction, turn)
 
             if self.joystick.getRawButton(4):
+                print("PercentOutput mode")
                 for wheel in self.superDrive.wheels:
-                    wheel.driveMode = ctre.ControlMode.PercentOutput
+                    wheel.angledWheel.driveMode = ctre.ControlMode.PercentOutput
             if self.joystick.getRawButton(3):
+                print("Velocity mode")
                 for wheel in self.superDrive.wheels:
-                    wheel.driveMode = ctre.ControlMode.Velocity
+                    wheel.angledWheel.driveMode = ctre.ControlMode.Velocity
             if self.joystick.getRawButton(5):
+                print("Position mode")
                 for wheel in self.superDrive.wheels:
-                    wheel.driveMode = ctre.ControlMode.Position
+                    wheel.angledWheel.driveMode = ctre.ControlMode.Position
 
             yield
 
