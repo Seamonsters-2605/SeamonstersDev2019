@@ -1,7 +1,6 @@
 import wpilib
 import ctre
 import seamonsters as sea
-import threading
 import motortest_app
 
 class MotorTestBot(sea.GeneratorBot):
@@ -10,31 +9,14 @@ class MotorTestBot(sea.GeneratorBot):
         self.talons = { } # dictionary, maps talon number to WPI_TalonSRX object
 
         self.joy = wpilib.Joystick(0)
-
-        appReadyEvent = threading.Event()
-        def appCallback(app):
-            self.app = app
-            appReadyEvent.set()
-        thread = threading.Thread(target=motortest_app.main,
-                                  args=(self, appCallback))
-        thread.daemon = True
-        thread.start()
-        print("Waiting for app to start...")
-        appReadyEvent.wait()
-        print("App started!")
+        self.app = sea.startDashboard(self, motortest_app.MotorTester)
 
     def teleop(self):
-        # clear event queue
-        while not self.app.eventQueue.empty():
-            self.app.eventQueue.get()
-
+        self.app.clearEvents()
         self._setTalonNumber(int(self.app.talonBox.get_value()))
-
         while True:
             yield
-            while not self.app.eventQueue.empty():
-                event = self.app.eventQueue.get()
-                event()
+            self.app.doEvents()
             self.updateTalonLog()
 
     def _setTalonNumber(self, n):

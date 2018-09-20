@@ -1,26 +1,8 @@
-import sys
 import remi
 import remi.gui as gui
-import queue
+import seamonsters as sea
 
-def HBoxWith(contents, **kwargs):
-    box = gui.HBox(**kwargs)
-    for widget in contents:
-        box.append(widget)
-    return box
-
-def VBoxWith(contents, **kwargs):
-    box = gui.VBox(**kwargs)
-    for widget in contents:
-        box.append(widget)
-    return box
-
-class MotorTester(remi.App):
-
-    def __init__(self, *args):
-        self.eventQueue = queue.Queue()
-
-        super(MotorTester, self).__init__(*args)
+class MotorTester(sea.Dashboard):
 
     def main(self, robot, appCallback):
         self.robot = robot
@@ -35,40 +17,40 @@ class MotorTester(remi.App):
 
         self.talonBox = gui.SpinBox(default_value='0', min=0, max=99, step=1)
         self.talonBox.set_on_change_listener(self.queuedEvent(robot.c_setTalon))
-        root.append(HBoxWith((
+        root.append(sea.hBoxWith(
             gui.Label('Talon:&nbsp;'),
             self.talonBox
-        )))
+        ))
 
         self.selectedTalonLbl = gui.Label('')
-        root.append(HBoxWith((
+        root.append(sea.hBoxWith(
             gui.Label('Selected talon:&nbsp;'),
             self.selectedTalonLbl
-        )))
+        ))
 
         self.outputVoltageLbl = gui.Label('')
-        root.append(HBoxWith((
+        root.append(sea.hBoxWith(
             gui.Label('Output voltage:&nbsp;'),
             self.outputVoltageLbl
-        )))
+        ))
 
         self.outputCurrentLbl = gui.Label('')
-        root.append(HBoxWith((
+        root.append(sea.hBoxWith(
             gui.Label('Output current:&nbsp;'),
             self.outputCurrentLbl
-        )))
+        ))
 
         self.encoderPositionLbl = gui.Label('')
-        root.append(HBoxWith((
+        root.append(sea.hBoxWith(
             gui.Label('Encoder position:&nbsp;'),
             self.encoderPositionLbl
-        )))
+        ))
 
         self.encoderVelocityLbl = gui.Label('')
-        root.append(HBoxWith((
+        root.append(sea.hBoxWith(
             gui.Label('Encoder velocity:&nbsp;'),
             self.encoderVelocityLbl
-        )))
+        ))
 
         controlTabBox = gui.TabBox(width='100%')
         root.append(controlTabBox)
@@ -102,11 +84,11 @@ class MotorTester(remi.App):
         holdButton = gui.Button('Hold', width='100')
         holdButton.set_on_click_listener(
             self.queuedEvent(robot.c_updatePosition), self.offsetBox)
-        controlTabBox.add_tab(HBoxWith((
+        controlTabBox.add_tab(sea.hBoxWith(
             gui.Label('Offset:&nbsp;'),
             self.offsetBox,
             holdButton
-        )), 'Hold Position', self.queuedEvent(robot.c_updateDisabled))
+        ), 'Hold Position', self.queuedEvent(robot.c_updateDisabled))
 
         # margin
         root.append(gui.HBox(height=10))
@@ -122,21 +104,3 @@ class MotorTester(remi.App):
         self.velocityOutputSlider.set_value('0')
         self.queuedEvent(self.robot.c_updateVelocity) \
             (None, None, self.velocityOutputSlider, self.maxVelocityBox)
-
-    def queuedEvent(self, event):
-        def queueTheEvent(*args, **kwargs):
-            def doTheEvent():
-                print("Event:", event.__name__)
-                event(*args, **kwargs)
-            self.eventQueue.put(doTheEvent)
-        return queueTheEvent
-
-def main(robot, appCallback):
-    if sys.argv[1] == 'sim':
-        remi.start(MotorTester, userdata=(robot, appCallback,))
-    elif sys.argv[1] == 'depoly':
-        pass
-    elif sys.argv[1] == 'run':
-        remi.start(MotorTester, start_browser=False, address='10.26.5.2',
-                   port=5805,
-                   userdata=(robot, appCallback,))
