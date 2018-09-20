@@ -1,4 +1,3 @@
-import remi
 import remi.gui as gui
 import seamonsters as sea
 
