@@ -31,9 +31,9 @@ class SwerveBotDashboard(sea.Dashboard):
     def moveRobot(self, magnitude, direction, turn):
         self.robotX += magnitude * math.cos(direction + self.robotAngle)
         self.robotY -= magnitude * math.sin(direction + self.robotAngle)
-        self.robotAngle += math.degrees(turn) / 50.0
+        self.robotAngle += turn / 50.0
         self.updateRobotPosition()
 
     def updateRobotPosition(self):
         self.arrow.attributes['transform'] = "translate(%s,%s) rotate(%s)" \
-            % (self.robotX, self.robotY, self.robotAngle)
+            % (self.robotX, self.robotY, -math.degrees(self.robotAngle))
