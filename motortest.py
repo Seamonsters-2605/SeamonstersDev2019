@@ -9,9 +9,12 @@ class MotorTestBot(sea.GeneratorBot):
         self.talons = { } # dictionary, maps talon number to WPI_TalonSRX object
 
         self.joy = wpilib.Joystick(0)
-        self.app = sea.startDashboard(self, motortest_app.MotorTester)
+        self.app = None
+        sea.startDashboard(self, motortest_app.MotorTester)
 
     def teleop(self):
+        while self.app is None:
+            yield
         self.app.clearEvents()
         self._setTalonNumber(int(self.app.talonBox.get_value()))
         while True:
