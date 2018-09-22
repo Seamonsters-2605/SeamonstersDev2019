@@ -2,6 +2,7 @@ import math
 import wpilib
 import ctre
 import seamonsters as sea
+import swervebot_app
 
 # rotate motor: 3138 ticks per rotation
 
@@ -41,8 +42,17 @@ class SwerveBot(sea.GeneratorBot):
         for wheel in self.superDrive.wheels:
             wheel.driveMode = ctre.ControlMode.PercentOutput
 
+        self.app = None
+        sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
+
     def teleop(self):
+        if self.app is not None:
+            self.app.clearEvents()
+
         while True:
+            if self.app is not None:
+                self.app.doEvents()
+
             mag = sea.deadZone(self.joystick.getMagnitude())
             mag *= 3 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() - math.pi/2
@@ -50,6 +60,10 @@ class SwerveBot(sea.GeneratorBot):
             turn *= math.radians(120) # maximum radians per second
 
             self.superDrive.drive(mag, direction, turn)
+
+            if self.app is not None:
+                moveMag, moveDir, moveTurn = self.superDrive.getRobotMovement()
+                self.app.moveRobot(moveMag, moveDir, moveTurn)
 
             if self.joystick.getRawButton(4):
                 print("PercentOutput mode")
