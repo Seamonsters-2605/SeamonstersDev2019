@@ -48,7 +48,10 @@ class SwerveBot(sea.GeneratorBot):
     def teleop(self):
         if self.app is not None:
             self.app.clearEvents()
-
+        # reset joystick buttons
+        self.joystick.getRawButtonPressed(3)
+        self.joystick.getRawButtonPressed(4)
+        self.joystick.getRawButtonPressed(5)
         while True:
             if self.app is not None:
                 self.app.doEvents()
@@ -65,15 +68,15 @@ class SwerveBot(sea.GeneratorBot):
                 moveMag, moveDir, moveTurn = self.superDrive.getRobotMovement()
                 self.app.moveRobot(moveMag, moveDir, moveTurn)
 
-            if self.joystick.getRawButton(4):
+            if self.joystick.getRawButtonPressed(4):
                 print("PercentOutput mode")
                 for wheel in self.superDrive.wheels:
                     wheel.angledWheel.driveMode = ctre.ControlMode.PercentOutput
-            if self.joystick.getRawButton(3):
+            if self.joystick.getRawButtonPressed(3):
                 print("Velocity mode")
                 for wheel in self.superDrive.wheels:
                     wheel.angledWheel.driveMode = ctre.ControlMode.Velocity
-            if self.joystick.getRawButton(5):
+            if self.joystick.getRawButtonPressed(5):
                 print("Position mode")
                 for wheel in self.superDrive.wheels:
                     wheel.angledWheel.driveMode = ctre.ControlMode.Position
