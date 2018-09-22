@@ -28,6 +28,7 @@ class SwerveBot(sea.GeneratorBot):
         wheelBDrive = sea.AngledWheel(wheelBDriveTalon,-.75,.75,0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
+        caster = sea.CasterWheel(0, -.75)
 
         wheelARotate = sea.SwerveWheel(wheelADrive, wheelARotateTalon,
                                        1612.8, True)
@@ -36,7 +37,7 @@ class SwerveBot(sea.GeneratorBot):
 
         self.superDrive = sea.SuperHolonomicDrive()
 
-        for wheelrotate in [wheelARotate,wheelBRotate]:
+        for wheelrotate in [wheelARotate, wheelBRotate, caster]:
             self.superDrive.addWheel(wheelrotate)
 
         for wheel in self.superDrive.wheels:
@@ -71,15 +72,18 @@ class SwerveBot(sea.GeneratorBot):
             if self.joystick.getRawButtonPressed(4):
                 print("PercentOutput mode")
                 for wheel in self.superDrive.wheels:
-                    wheel.angledWheel.driveMode = ctre.ControlMode.PercentOutput
+                    if isinstance(wheel, sea.SwerveWheel):
+                        wheel.angledWheel.driveMode = ctre.ControlMode.PercentOutput
             if self.joystick.getRawButtonPressed(3):
                 print("Velocity mode")
                 for wheel in self.superDrive.wheels:
-                    wheel.angledWheel.driveMode = ctre.ControlMode.Velocity
+                    if isinstance(wheel, sea.SwerveWheel):
+                        wheel.angledWheel.driveMode = ctre.ControlMode.Velocity
             if self.joystick.getRawButtonPressed(5):
                 print("Position mode")
                 for wheel in self.superDrive.wheels:
-                    wheel.angledWheel.driveMode = ctre.ControlMode.Position
+                    if isinstance(wheel, sea.SwerveWheel):
+                        wheel.angledWheel.driveMode = ctre.ControlMode.Position
 
             yield
 
