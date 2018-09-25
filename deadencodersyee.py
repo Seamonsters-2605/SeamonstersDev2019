@@ -6,15 +6,20 @@ class MyRobot (wpilib.IterativeRobot):
 
     def robotInit(self):
         self.talon = ctre.WPI_TalonSRX(0)
-        self.talon.configSelectedFeedbackSensor(ctre.FeedbackDevice.QuadEncoder)
-        self.values = []
+        self.talon.configSelectedFeedbackSensor(ctre.FeedbackDevice.QuadEncoder,0,0)
+
+        self.oldnumber = 0
+        self.tick = 0
 
     def teleopPeriodic(self):
-        if len(self.values) == 50:
-            last_value = self.values.pop()
-        new_value = self.talon.getSelectedSenosrPosition(0)
-        if abs(ne_value - last_value) <= 1:
-            print ("Dead encoder")
+        newnumber = self.talon.getSelectedSensorPosition(0)
+        if abs(newnumber) + 1 == oldnumber or abs(newnumber) - 1 == oldnumber or abs(newnumber) == oldnumber:
+            tick += 1
+            oldnumber = newnumber
+        if not abs(newnumber) + 1 == oldnumber or not abs(newnumber) - 1 == oldnumber or not abs(newnumber) == oldnumber:
+            tick == 0
+        if tick == 50:
+            print ("It dead broder")
 
-if name == "__main__":
+if __name__ == "__main__":
     wpilib.run(MyRobot, physics_enabled=True)
