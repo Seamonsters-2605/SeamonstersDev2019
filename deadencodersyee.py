@@ -13,7 +13,7 @@ class MyRobot (wpilib.IterativeRobot):
 
     def teleopPeriodic(self):
         newnumber = self.talon.getSelectedSensorPosition(0)
-        if abs(newnumber) + 1 == self.oldnumber or abs(newnumber) - 1 == self.oldnumber or abs(newnumber) == oldnumber:
+        if abs(newnumber) + 1 == self.oldnumber or abs(newnumber) - 1 == self.oldnumber or abs(newnumber) == self.oldnumber:
             self.tick += 1
             self.oldnumber = newnumber
         if not abs(newnumber) + 1 == self.oldnumber or not abs(newnumber) - 1 == self.oldnumber or not abs(newnumber) == self.oldnumber:
