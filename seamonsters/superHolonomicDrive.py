@@ -34,18 +34,6 @@ class Wheel:
         :param direction: radians. 0 is right, positive counter-clockwise
         """
 
-    def getMovementDirection(self):
-        """
-        :return: the current direction the wheel is moving in radians. This may be based on sensors.
-        """
-        return 0
-
-    def getMovementMagnitude(self):
-        """
-        :return: the current velocity of the wheel in feet per second, based on sensors.
-        """
-        return 0
-
 
 class TestWheel(Wheel):
     """
@@ -62,15 +50,7 @@ class TestWheel(Wheel):
         self.name = name
 
     def drive(self, magnitude, direction):
-        self._storedMagnitude = magnitude
-        self._storedDirection = direction
         print(self.name, "Mag:", magnitude, "Dir:", math.degrees(direction))
-
-    def getMovementDirection(self):
-        return self._storedDirection
-
-    def getMovementMagnitude(self):
-        return self._storedMagnitude
 
 
 class AngledWheel(Wheel):
@@ -145,7 +125,7 @@ class AngledWheel(Wheel):
             if self._errorCheckCount % 20 == 0:
                 # getSelectedSensorPosition is slow so only check a few times
                 # per second
-                currentPos = self.motor.getSelectedSensorPosition(0)
+                currentPos = self.motor.getSelectedSensorPosition(0)  
                 # TODO: this is arbitrary
                 maxError = self.maxVoltageVelocity \
                            * self.encoderCountsPerFoot / 2
@@ -155,13 +135,6 @@ class AngledWheel(Wheel):
                     self._positionTarget = currentPos
 
             self.motor.set(self.driveMode, self._positionTarget)
-
-    def getMovementDirection(self):
-        return self.angle
-
-    def getMovementMagnitude(self):
-        sensorVel = self.motor.getSelectedSensorVelocity(0)
-        return sensorVel * 10.0 / self.encoderCountsPerFoot
 
 
 class MecanumWheel(AngledWheel):
@@ -179,10 +152,7 @@ class MecanumWheel(AngledWheel):
     def drive(self, magnitude, direction):
         return super().drive(magnitude * MecanumWheel.SQRT_2, direction)
 
-    def getMovementMagnitude(self):
-        return super().getMovementMagnitude() / MecanumWheel.SQRT_2
-
-
+    
 class SwerveWheel(Wheel):
     """
     A wheel which can rotate. A SwerveWheel drives using an AngledWheel, and
@@ -190,7 +160,7 @@ class SwerveWheel(Wheel):
     """
 
     def __init__(self, angledWheel, steerMotor, encoderCountsPerRev,
-                 reverseSteerMotor=False):
+                 reverseSteerMotor=False,offsetX=False,offsetY=False):
         """
         ``zeroSteering()`` is called in __init__.
 
@@ -250,12 +220,6 @@ class SwerveWheel(Wheel):
         self.angledWheel.angle = currentAngle
         self.angledWheel.drive(magnitude, direction)
 
-    def getMovementDirection(self):
-        return self.angledWheel.getMovementDirection()
-
-    def getMovementMagnitude(self):
-        return self.angledWheel.getMovementMagnitude()
-
 
 class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
 
@@ -292,33 +256,6 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
                                  wheelDirections[i])
         return minWheelScale
 
-    def getRobotMovement(self):
-        """
-        Get the movement of the robot as a whole, based on wheel sensors.
-        :return: (magnitude, direction, turn). Magnitude in feet per second,
-        direction in radians, turn in radians per second.
-        """
-        totalX = 0
-        totalY = 0
-        totalR = 0
-        for wheel in self.wheels:
-            wheelMag = wheel.getMovementMagnitude()
-            wheelDir = wheel.getMovementDirection()
-            # linear velocity
-            totalX += wheelMag * math.cos(wheelDir)
-            totalY += wheelMag * math.sin(wheelDir)
-            # angular velocity
-            totalR += wheelMag * math.sin(wheelDir - math.atan2(wheel.y, wheel.x)) \
-                / math.sqrt(wheel.x ** 2 + wheel.y ** 2)
-
-        numWheels = len(self.wheels)
-        totalX /= numWheels
-        totalY /= numWheels
-        totalR /= numWheels
-
-        magnitude = math.sqrt(totalX ** 2 + totalY ** 2)
-        direction = math.atan2(totalY, totalX)
-        return (magnitude, direction, totalR)
 
 if __name__ == "__main__":
     drive = SuperHolonomicDrive()
@@ -328,13 +265,9 @@ if __name__ == "__main__":
     drive.addWheel(TestWheel("Wheel D", -1, -1))
 
     def testDrive(mag, dir, turn):
-        print("Drive Input mag:", mag, "dir:", math.degrees(dir), "turn:", turn)
+        print("Drive mag:", mag, "dir:", math.degrees(dir), "turn:", turn)
         drive.drive(mag, dir, turn)
-        magOut, dirOut, turnOut = drive.getRobotMovement()
-        print("Drive Output mag:", magOut, "dir:", math.degrees(dirOut), "turn:", turnOut)
 
-    testDrive(0, 0, 0)
     testDrive(4, math.radians(90), 0)
     testDrive(-5, math.radians(46), 0)
     testDrive(0, 0, 1)
-    testDrive(-5, math.radians(46), 3)
