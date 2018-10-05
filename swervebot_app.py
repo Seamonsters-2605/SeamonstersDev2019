@@ -9,9 +9,9 @@ class SwerveBotDashboard(sea.Dashboard):
 
         root = gui.VBox(width=600)
 
-        fieldWidth = 500
-        fieldHeight = 450
-        self.fieldSvg = gui.Svg(fieldWidth, fieldHeight)
+        self.fieldWidth = 500
+        self.fieldHeight = 450
+        self.fieldSvg = gui.Svg(self.fieldWidth, self.fieldHeight)
         root.append(self.fieldSvg)
         self.arrow = gui.SvgPolyline()
         self.fieldSvg.append(self.arrow)
@@ -20,10 +20,11 @@ class SwerveBotDashboard(sea.Dashboard):
         self.arrow.add_coord(-30, 30)
         self.arrow.style['fill'] = 'gray'
 
-        self.robotX = fieldWidth / 2
-        self.robotY = fieldHeight / 2
-        self.robotAngle = 0
-        self.updateRobotPosition()
+        self._c_resetPosition(None)
+
+        resetButton = gui.Button("Reset")
+        resetButton.set_on_click_listener(self._c_resetPosition)
+        root.append(resetButton)
 
         appCallback(self)
         return root
@@ -32,6 +33,12 @@ class SwerveBotDashboard(sea.Dashboard):
         self.robotX += magnitude * math.cos(direction + self.robotAngle)
         self.robotY -= magnitude * math.sin(direction + self.robotAngle)
         self.robotAngle += turn / 50.0
+        self.updateRobotPosition()
+
+    def _c_resetPosition(self, button):
+        self.robotX = self.fieldWidth / 2
+        self.robotY = self.fieldHeight / 2
+        self.robotAngle = 0
         self.updateRobotPosition()
 
     def updateRobotPosition(self):
