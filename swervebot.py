@@ -27,13 +27,17 @@ class SwerveBot(sea.GeneratorBot):
                                       maxVoltageVelocity=16)
         wheelBDrive = sea.AngledWheel(wheelBDriveTalon,-.75,.75,0,
                                       encoderCountsPerFoot=31291.1352,
+                                      maxVoltageVelocity=16)        
+        wheelCDrive = sea.AngledWheel(wheelCDriveTalon,-.75,.75,0,
+                                      encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
 
         wheelARotate = sea.SwerveWheel(wheelADrive, wheelARotateTalon,
                                        1612.8, True)
         wheelBRotate = sea.SwerveWheel(wheelBDrive,wheelBRotateTalon,
                                        1612.8, True)
-
+        wheelCRotate = sea.SwerveWheel(wheelCDrive,wheelCRotateTalon,
+                                       1612.8, True)
         self.superDrive = sea.SuperHolonomicDrive()
 
         for wheelrotate in [wheelARotate, wheelBRotate]:
