@@ -9,12 +9,12 @@ import swervebot_app
 class SwerveBot(sea.GeneratorBot):
 
     def circleDistance(a, b):
-    diff = a - b
-    while diff > math.pi:
-        diff -= math.pi * 2
-    while diff < -math.pi:
-        diff += math.pi * 2
-    return diff
+        diff = a - b
+        while diff > math.pi:
+            diff -= math.pi * 2
+        while diff < -math.pi:
+            diff += math.pi * 2
+        return diff
 
     def robotInit(self):
         self.joystick = wpilib.Joystick(0)
@@ -24,6 +24,9 @@ class SwerveBot(sea.GeneratorBot):
 
         wheelBDriveTalon = ctre.WPI_TalonSRX(3)
         wheelBRotateTalon = ctre.WPI_TalonSRX(2)
+
+        wheelCDriveTalon = ctre.WPI_TalonSRX(5)
+        wheelCRotateTalon = ctre.WPI_TalonSRX(4)
 
         for talon in [wheelADriveTalon, wheelARotateTalon,
                       wheelBDriveTalon,wheelBRotateTalon]:
@@ -36,12 +39,15 @@ class SwerveBot(sea.GeneratorBot):
         wheelBDrive = sea.AngledWheel(wheelBDriveTalon,-.75,.75,0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
-
+        wheelCDrive = sea.AngledWheel(wheelCDriveTalon, -.75,.75,0,
+                                      encoderCountsPerFoot=31291.1352,
+                                      maxVoltageVelocity=16)
         wheelARotate = sea.SwerveWheel(wheelADrive, wheelARotateTalon,
                                        1612.8, True)
         wheelBRotate = sea.SwerveWheel(wheelBDrive,wheelBRotateTalon,
                                        1612.8, True)
-
+        wheelCRotate = sea.SwerveWheel(wheelCDrive,wheelCRotateTalon,
+                                       1612.8, True)
         self.superDrive = sea.SuperHolonomicDrive()
 
         for wheelrotate in [wheelARotate, wheelBRotate]:
@@ -70,7 +76,7 @@ class SwerveBot(sea.GeneratorBot):
             turn = sea.deadZone(self.joystick.getRawAxis(3))
             turn *= math.radians(120) # maximum radians per second
             if not self.joystick.getPOV() == -1:
-                turn = circleDistance(math.radians(self.joystick.getPOV()), math.radians(self.ahrs.getAngle())
+                turn = circleDistance(math.radians(self.joystick.getPOV()), math.radians(self.ahrs.getAngle()))
                 turn *= math.radians(120)
             
             self.superDrive.drive(mag, direction, turn)
