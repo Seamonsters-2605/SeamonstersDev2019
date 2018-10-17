@@ -17,6 +17,9 @@ class SwerveBot(sea.GeneratorBot):
         wheelBDriveTalon = ctre.WPI_TalonSRX(3)
         wheelBRotateTalon = ctre.WPI_TalonSRX(2)
 
+        wheelCDriveTalon = ctre.WPI_TalonSRX(5)
+        wheelCRotateTalon = ctre.WPI_TalonSRX(4)
+
         for talon in [wheelADriveTalon, wheelARotateTalon,
                       wheelBDriveTalon,wheelBRotateTalon]:
             talon.configSelectedFeedbackSensor(
@@ -40,7 +43,7 @@ class SwerveBot(sea.GeneratorBot):
                                        1612.8, True)
         self.superDrive = sea.SuperHolonomicDrive()
 
-        for wheelrotate in [wheelARotate, wheelBRotate]:
+        for wheelrotate in [wheelARotate, wheelBRotate, wheelCRotate]:
             self.superDrive.addWheel(wheelrotate)
 
         for wheel in self.superDrive.wheels:
