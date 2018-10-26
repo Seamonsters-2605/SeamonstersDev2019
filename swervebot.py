@@ -31,7 +31,7 @@ class SwerveBot(sea.GeneratorBot):
         wheelBDrive = sea.AngledWheel(wheelBDriveTalon,-.75,.75,0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)        
-        wheelCDrive = sea.AngledWheel(wheelCDriveTalon,-.75,.75,0,
+        wheelCDrive = sea.AngledWheel(wheelCDriveTalon, 0, -.75,0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
 
