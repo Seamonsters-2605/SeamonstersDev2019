@@ -2,6 +2,8 @@ import math
 import ctre
 import seamonsters.drive
 
+MAX_POSITION_OCCURENCE = 10
+CHECK_ENCODER_CYCLE = 10
 # if circle = math.pi*2, returns the smallest angle between two directions
 # on a circle
 def _circleDistance(a, b, circle):
@@ -128,10 +130,13 @@ class AngledWheel(Wheel):
         self.reverse = reverse
 
         self.driveMode = ctre.ControlMode.PercentOutput
+        self.encoderWorking = True
 
         self._motorState = None
         self._positionTarget = 0
-        self._errorCheckCount = 0
+        self._encoderCheckCount = 0
+        self._oldPosition = 0
+        self._positionOccurence = 0
 
     def limitMagnitude(self, magnitude, direction):
         # TODO: check position error in this function instead, and factor it
@@ -140,6 +145,27 @@ class AngledWheel(Wheel):
         if abs(magnitude) > self.maxVoltageVelocity:
             return self.maxVoltageVelocity / abs(magnitude)
         return 1.0
+
+    def _encoderCheck(self):
+        newPosition = self.motor.getSelectedSensorPosition(0)
+        #print(newPosition)
+        #print(self.oldPosition)
+        if abs(newPosition - self._oldPosition) <= 1:
+            self._positionOccurence += 1
+        else:
+            self._positionOccurence = 0
+            self.encoderWorking = True
+            self._oldPosition = newPosition
+
+        if self._positionOccurence >= MAX_POSITION_OCCURENCE:
+            self.encoderWorking = False
+
+        if self.driveMode == ctre.ControlMode.Position:
+            # TODO: this is arbitrary
+            maxError = self.maxVoltageVelocity * self.encoderCountsPerFoot / 2
+            if abs(newPosition - self._positionTarget) > maxError:
+                print("Incremental position error!", self.motor.getDeviceID())
+                self._positionTarget = newPosition
 
     def drive(self, magnitude, direction):
         magnitude *= math.cos(direction - self.angle)
@@ -164,26 +190,20 @@ class AngledWheel(Wheel):
             if self._motorState != self.driveMode:
                 self._positionTarget = self.motor.getSelectedSensorPosition(0)
                 self._motorState = self.driveMode
-                self._errorCheckCount = 0
 
             encoderCountsPerSecond = magnitude * self.encoderCountsPerFoot
             self._positionTarget += encoderCountsPerSecond / 50.0
-
-            self._errorCheckCount += 1
-            if self._errorCheckCount % 20 == 0:
-                # getSelectedSensorPosition is slow so only check a few times
-                # per second
-                currentPos = self.motor.getSelectedSensorPosition(0)
-                # TODO: this is arbitrary
-                maxError = self.maxVoltageVelocity \
-                           * self.encoderCountsPerFoot / 2
-                if abs(currentPos - self._positionTarget) \
-                        > maxError:
-                    print("Incremental position error!", currentPos)
-                    self._positionTarget = currentPos
-
             self.motor.set(self.driveMode, self._positionTarget)
 
+        if abs(magnitude) > 0.1:
+            if self._encoderCheckCount % CHECK_ENCODER_CYCLE == 0:
+                # getSelectedSensorPosition is slow so only check a few times
+                # per second
+                self._encoderCheck()
+        else:
+            self._positionOccurence = 0
+        self._encoderCheckCount += 1
+            
     def getMovementDirection(self):
         return self.angle
 
