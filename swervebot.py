@@ -3,7 +3,6 @@ import wpilib
 import ctre
 import seamonsters as sea
 import swervebot_app
-import physics
 
 # rotate motor: 3138 ticks per rotation
 
@@ -44,7 +43,7 @@ class SwerveBot(sea.GeneratorBot):
         wheelCRotate = sea.SwerveWheel(wheelCDrive, wheelCRotateTalon,
                                        1612.8, True)
         self.superDrive = sea.SuperHolonomicDrive()
-        physics.simulatedDrivetrain = self.superDrive
+        sea.setSimulatedDrivetrain(self.superDrive)
 
         for wheelrotate in [wheelARotate, wheelBRotate, wheelCRotate]:
             self.superDrive.addWheel(wheelrotate)
