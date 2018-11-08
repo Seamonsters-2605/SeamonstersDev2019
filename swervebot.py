@@ -41,7 +41,7 @@ class SwerveBot(sea.GeneratorBot):
         wheelBRotate = sea.SwerveWheel(wheelBDrive, wheelBRotateTalon,
                                        1612.8, True)
         wheelCRotate = sea.SwerveWheel(wheelCDrive, wheelCRotateTalon,
-                                       1612.8, True)
+                                       1680, True) # 1670, 1686, 1680
         self.superDrive = sea.SuperHolonomicDrive()
         sea.setSimulatedDrivetrain(self.superDrive)
 
