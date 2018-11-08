@@ -36,16 +36,18 @@ class Wheel:
         """
         Return the scaling factor necessary to keep the wheel speed within its
         limits.
+
         :param magnitude: speed in feet per second
         :param direction: radians. 0 is right, positive counter-clockwise
         :return: 1.0 if wheel speed is within it limits, otherwise a value
-        between 0 and 1 to scale the wheel down to its maximum speed.
+            between 0 and 1 to scale the wheel down to its maximum speed.
         """
         return 1.0
 
     def drive(self, magnitude, direction):
         """
         Spin the wheel. This should be called 50 times per second.
+
         :param magnitude: speed in feet per second.
         :param direction: radians. 0 is right, positive counter-clockwise
         """
@@ -319,6 +321,7 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
     def getRobotMovement(self):
         """
         Get the movement of the robot as a whole, based on wheel sensors.
+
         :return: (magnitude, direction, turn). Magnitude in feet per second,
         direction in radians, turn in radians per second.
         """
