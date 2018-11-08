@@ -21,25 +21,26 @@ class SwerveBot(sea.GeneratorBot):
         wheelCRotateTalon = ctre.WPI_TalonSRX(4)
 
         for talon in [wheelADriveTalon, wheelARotateTalon,
-                      wheelBDriveTalon,wheelBRotateTalon]:
+                      wheelBDriveTalon, wheelBRotateTalon,
+                      wheelCDriveTalon, wheelCRotateTalon]:
             talon.configSelectedFeedbackSensor(
                 ctre.FeedbackDevice.QuadEncoder, 0, 0)
 
-        wheelADrive = sea.AngledWheel(wheelADriveTalon,.75, .75, 0,
+        wheelADrive = sea.AngledWheel(wheelADriveTalon, .75, .75, 0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
-        wheelBDrive = sea.AngledWheel(wheelBDriveTalon,-.75,.75,0,
+        wheelBDrive = sea.AngledWheel(wheelBDriveTalon, -.75, .75, 0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)        
-        wheelCDrive = sea.AngledWheel(wheelCDriveTalon, 0, -.75,0,
+        wheelCDrive = sea.AngledWheel(wheelCDriveTalon, 0, -.75, 0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
 
         wheelARotate = sea.SwerveWheel(wheelADrive, wheelARotateTalon,
                                        1612.8, True)
-        wheelBRotate = sea.SwerveWheel(wheelBDrive,wheelBRotateTalon,
+        wheelBRotate = sea.SwerveWheel(wheelBDrive, wheelBRotateTalon,
                                        1612.8, True)
-        wheelCRotate = sea.SwerveWheel(wheelCDrive,wheelCRotateTalon,
+        wheelCRotate = sea.SwerveWheel(wheelCDrive, wheelCRotateTalon,
                                        1612.8, True)
         self.superDrive = sea.SuperHolonomicDrive()
 
