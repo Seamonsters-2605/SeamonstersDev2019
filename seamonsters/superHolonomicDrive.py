@@ -2,6 +2,22 @@ import math
 import ctre
 import seamonsters.drive
 
+# if circle = math.pi*2, returns the smallest angle between two directions
+# on a circle
+def _circleDistance(a, b, circle):
+    diff = b - a
+    while diff > circle / 2:
+        diff -= circle
+    while diff < -circle / 2:
+        diff += circle
+    return diff
+
+def _iteratePairs(list):
+    for i in range(0, len(list) - 1):
+        for j in range(i + 1, len(list)):
+            yield list[i], list[j]
+
+
 class Wheel:
     """
     Interface for wheels. A Wheel has a location and can put out force in a
@@ -171,6 +187,8 @@ class AngledWheel(Wheel):
 
     def getMovementMagnitude(self):
         sensorVel = self.motor.getSelectedSensorVelocity(0)
+        if self.reverse:
+            sensorVel = -sensorVel
         return sensorVel * 10.0 / self.encoderCountsPerFoot
 
 
@@ -247,12 +265,8 @@ class SwerveWheel(Wheel):
         #print("Wheel", math.degrees(direction))
         currentAngle = self._getCurrentSteeringAngle()
         if magnitude != 0:
-            angleDiff = direction - currentAngle
             # steering should never rotate more than 90 degrees from any position
-            while angleDiff > math.pi / 2:
-                angleDiff -= math.pi
-            while angleDiff < -math.pi / 2:
-                angleDiff += math.pi
+            angleDiff = _circleDistance(currentAngle, direction, math.pi)
             #print("Target", math.degrees(currentAngle + angleDiff))
             #print(math.degrees(currentAngle), math.degrees(currentAngle + angleDiff))
             self._setSteering(currentAngle + angleDiff)
@@ -312,81 +326,35 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
         for wheel in self.wheels:
             wheelMag = wheel.getMovementMagnitude()
             wheelDir = wheel.getMovementDirection()
-            if wheelMag < 0:
-                wheelDir += math.pi
-            wheelValues.append((wheel, abs(wheelMag), self._constrainAngle(wheelDir)))
-        rotationCenterX = 0
-        rotationCenterY = 0
-        numCentersAdded = 0
-        for (wheelA, magA, dirA), (wheelB, magB, dirB) in self._iteratePairs(wheelValues):
-            if math.isclose(dirA % math.pi, dirB % math.pi):
-                continue # no intersection, lines are parallel
-            if abs(magA) < 1e-6 or abs(magB) < 1e-6:
-                continue
-            # find intersection of lines perpendicular to wheel direction
-            # this is the center of rotation
-            aDx, aDy = self._directionUnitVector(dirA + math.pi / 2)
-            bDx, bDy = self._directionUnitVector(dirB + math.pi / 2)
-            intersectX, intersectY = self._intersect(wheelA.x, wheelA.y, aDx, aDy,
-                                                     wheelB.x, wheelB.y, bDx, bDy)
-            rotationCenterX += intersectX
-            rotationCenterY += intersectY
-            numCentersAdded += 1
+            dx = wheelMag * math.cos(wheelDir)
+            dy = wheelMag * math.sin(wheelDir)
+            wheelValues.append((wheel, dx, dy))
 
-        if numCentersAdded == 0:
-            # special case, the robot is moving in a straight line
-            averageMag = 0
-            averageDir = 0
-            for wheel, mag, direction in wheelValues:
-                averageMag += mag
-                averageDir += direction
-            averageMag /= len(wheelValues)
-            averageDir /= len(wheelValues)
-            return averageMag, averageDir, 0.0
-        else:
-            # find average point for center of rotation
-            rotationCenterX /= numCentersAdded
-            rotationCenterY /= numCentersAdded
-            # calculate average angular velocity of wheels about center of rotation
-            angularVelocity = 0
-            angularVelocityCount = 0
-            for wheel, wheelMag, wheelDir in wheelValues:
-                xOffset = wheel.x - rotationCenterX
-                yOffset = wheel.y - rotationCenterY
-                distanceToRotationCenter = math.sqrt(xOffset ** 2 + yOffset ** 2)
-                if distanceToRotationCenter < 1e-6:
-                    continue
-                angularVelocity += wheelMag * math.sin(wheelDir - math.atan2(yOffset, xOffset))\
-                    / distanceToRotationCenter
-                angularVelocityCount += 1
-            angularVelocity /= angularVelocityCount # average
-            # calculate motion of origin about center of rotation
-            magnitude = math.sqrt(rotationCenterX**2 + rotationCenterY**2) * angularVelocity
-            direction = math.atan2(rotationCenterY, rotationCenterX) - math.pi / 2
-            return magnitude, direction, angularVelocity
+        totalX = 0
+        totalY = 0
+        totalA = 0
+        pairCount = 0
+        for (wheelA, aDx, aDy), (wheelB, bDx, bDy) in _iteratePairs(wheelValues):
+            # calc wheel b relative to wheel a
+            relPosX = wheelB.x - wheelA.x
+            relPosY = wheelB.y - wheelA.y
+            relPosMag = math.sqrt(relPosX ** 2 + relPosY ** 2)
+            relPosDir = math.atan2(relPosY, relPosX)
+            relVelX = bDx - aDx
+            relVelY = bDy - aDy
+            relVelDir = math.atan2(relVelY, relVelX)
+            relVelMag = math.sqrt(relVelX ** 2 + relVelY ** 2)
 
-    # utility functions for getRobotMovement:
+            totalX += (aDx + bDx) / 2
+            totalY += (aDy + bDy) / 2
+            totalA += relVelMag * math.sin(relVelDir - relPosDir) / relPosMag
+            pairCount += 1
+        totalX /= pairCount
+        totalY /= pairCount
+        totalA /= pairCount
 
-    def _directionUnitVector(self, dir):
-        return math.cos(dir), math.sin(dir)
+        return math.sqrt(totalX ** 2 + totalY ** 2), math.atan2(totalY, totalX), totalA
 
-    # return equivalent angle between 0 and 2pi
-    def _constrainAngle(self, a):
-        if a < 0:
-            a += math.pi * 2 * math.ceil(-a / (math.pi * 2))
-        else:
-            a %= math.pi * 2
-        return a
-
-    def _iteratePairs(self, list):
-        for i in range(0, len(list) - 1):
-            for j in range(i + 1, len(list)):
-                yield list[i], list[j]
-
-    def _intersect(self, x0a, y0a, dxa, dya, x0b, y0b, dxb, dyb):
-        # https://stackoverflow.com/a/41798064
-        t = (dyb*(x0b-x0a)-dxb*(y0b-y0a))/(dxa*dyb-dxb*dya)
-        return x0a+dxa*t, y0a+dya*t
 
 if __name__ == "__main__":
     drive = SuperHolonomicDrive()
