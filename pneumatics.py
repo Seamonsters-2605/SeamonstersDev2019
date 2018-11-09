@@ -7,9 +7,9 @@ class Pneumatics(wpilib.IterativeRobot):
         self.joystick = wpilib.Joystick(0)
 
     def teleopPeriodic(self):
-        if self.joystick.getRawButton(0):
-            self.pneu.set(True)
         if self.joystick.getRawButton(1):
+            self.pneu.set(True)
+        if self.joystick.getRawButton(2):
             self.pneu.set(False) 
 
 if __name__ == "__main__":
