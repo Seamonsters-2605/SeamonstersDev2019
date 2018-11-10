@@ -51,6 +51,8 @@ class SwerveBot(sea.GeneratorBot):
         for wheel in self.superDrive.wheels:
             wheel.driveMode = ctre.ControlMode.PercentOutput
 
+        self.robotOrigin = None
+
         self.app = None
         sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
 
@@ -74,7 +76,8 @@ class SwerveBot(sea.GeneratorBot):
             self.superDrive.drive(mag, direction, turn)
 
             if self.app is not None:
-                moveMag, moveDir, moveTurn = self.superDrive.getRobotMovement()
+                moveMag, moveDir, moveTurn, self.robotOrigin = \
+                    self.superDrive.getRobotPositionOffset(self.robotOrigin)
                 self.app.moveRobot(moveMag, moveDir, moveTurn)
 
             if self.joystick.getRawButtonPressed(4):

@@ -30,9 +30,9 @@ class SwerveBotDashboard(sea.Dashboard):
         return root
 
     def moveRobot(self, magnitude, direction, turn):
-        self.robotX += magnitude * math.cos(direction + self.robotAngle)
-        self.robotY -= magnitude * math.sin(direction + self.robotAngle)
-        self.robotAngle += turn / 50.0
+        self.robotX += magnitude * math.cos(direction + self.robotAngle) * 50.0
+        self.robotY -= magnitude * math.sin(direction + self.robotAngle) * 50.0
+        self.robotAngle += turn
         self.updateRobotPosition()
 
     def _c_resetPosition(self, button):
