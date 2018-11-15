@@ -3,12 +3,14 @@ import wpilib
 import ctre
 import seamonsters as sea
 import swervebot_app
+import physics
+from robotpy_ext.common_drivers.navx import AHRS
 
 # rotate motor: 3138 ticks per rotation
 
 class SwerveBot(sea.GeneratorBot):
 
-    def circleDistance(a, b):
+    def circleDistance(self, a, b):
         diff = a - b
         while diff > math.pi:
             diff -= math.pi * 2
@@ -17,6 +19,8 @@ class SwerveBot(sea.GeneratorBot):
         return diff
 
     def robotInit(self):
+        self.ahrs = AHRS.create_spi()
+
         self.joystick = wpilib.Joystick(0)
 
         wheelADriveTalon = ctre.WPI_TalonSRX(1)
@@ -46,7 +50,6 @@ class SwerveBot(sea.GeneratorBot):
         wheelCDrive = sea.AngledWheel(wheelCDriveTalon, 0,-.75,0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
-
         wheelARotate = sea.SwerveWheel(wheelADrive, wheelARotateTalon,
                                        1612.8, True)
         wheelBRotate = sea.SwerveWheel(wheelBDrive,wheelBRotateTalon,
@@ -54,6 +57,7 @@ class SwerveBot(sea.GeneratorBot):
         wheelCRotate = sea.SwerveWheel(wheelCDrive,wheelCRotateTalon,
                                        1612.8, True)
         self.superDrive = sea.SuperHolonomicDrive()
+        physics.simulatedDrivetrain = self.superDrive
 
         for wheelrotate in [wheelARotate, wheelBRotate, wheelCRotate]:
             self.superDrive.addWheel(wheelrotate)
@@ -81,7 +85,7 @@ class SwerveBot(sea.GeneratorBot):
             turn = sea.deadZone(self.joystick.getRawAxis(3))
             turn *= math.radians(120) # maximum radians per second
             if not self.joystick.getPOV() == -1:
-                turn = circleDistance(math.radians(self.joystick.getPOV()), math.radians(self.ahrs.getAngle()))
+                turn = self.circleDistance(math.radians(self.joystick.getPOV()), math.radians(self.ahrs.getAngle()))
                 turn *= math.radians(120)
             
             self.superDrive.drive(mag, direction, turn)
