@@ -6,7 +6,7 @@ import motortest_app
 class MotorTestBot(sea.GeneratorBot):
 
     def robotInit(self):
-        self.talons = { } # dictionary, maps talon number to WPI_TalonSRX object
+        self.talons = [None] * 99
 
         self.joy = wpilib.Joystick(0)
         self.app = None
@@ -23,13 +23,15 @@ class MotorTestBot(sea.GeneratorBot):
             self.updateTalonLog()
 
     def _setTalonNumber(self, n):
-        if n in self.talons:
+        if self.talons[n] is not None:
             self.talon = self.talons[n]
         else:
             self.talon = ctre.WPI_TalonSRX(n)
             self.talon.configSelectedFeedbackSensor(
                 ctre.FeedbackDevice.QuadEncoder, 0, 0)
             self.talons[n] = self.talon
+
+    # All c_ functions are callbacks for REMI widgets in motortest_app
 
     def c_setTalon(self, widget, value):
         self.talon.disable()
@@ -47,8 +49,8 @@ class MotorTestBot(sea.GeneratorBot):
         self.talon.set(ctre.ControlMode.Velocity, value)
 
     def c_updatePosition(self, button, spinBox):
-        value = self.talon.getSelectedSensorPosition(0) + \
-                int(spinBox.get_value())
+        value = self.talon.getSelectedSensorPosition(0) \
+                + int(spinBox.get_value())
         self.talon.set(ctre.ControlMode.Position, value)
 
     def updateTalonLog(self):
@@ -65,6 +67,8 @@ class MotorTestBot(sea.GeneratorBot):
             self.app.encoderVelocityLbl.set_text(
                 str(talon.getSelectedSensorVelocity(0)))
         except AssertionError:
+            # some talon functions don't work in the simulator and throw an
+            # AssertionError
             pass
 
 if __name__ == "__main__":
