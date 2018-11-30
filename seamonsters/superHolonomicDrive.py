@@ -2,6 +2,8 @@ import math
 import ctre
 import seamonsters.drive
 
+TWO_PI = math.pi * 2
+
 MAX_POSITION_OCCURENCE = 10
 CHECK_ENCODER_CYCLE = 10
 # if circle = math.pi*2, returns the smallest angle between two directions
@@ -299,10 +301,10 @@ class SwerveWheel(Wheel):
                  - self._steerOrigin
         if self.reverseSteerMotor:
             offset = -offset
-        return offset * 2 * math.pi / self.encoderCountsPerRev
+        return offset * TWO_PI / self.encoderCountsPerRev
 
     def _setSteering(self, direction):
-        pos = direction * self.encoderCountsPerRev / math.pi / 2
+        pos = direction * self.encoderCountsPerRev / TWO_PI
         if self.reverseSteerMotor:
             pos = -pos
         self.steerMotor.set(ctre.ControlMode.Position, pos + self._steerOrigin)
@@ -370,7 +372,7 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
         Get the movement of the robot as a whole, based on wheel sensors.
 
         :return: (magnitude, direction, turn). Magnitude in feet per second,
-        direction in radians, turn in radians per second.
+            direction in radians, turn in radians per second.
         """
         wheelValues = []
         for wheel in self.wheels:
@@ -384,6 +386,7 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
     def getRobotPositionOffset(self, origin):
         """
         Calculate how the robot has moved from a previous position.
+
         :param origin: an object returned by a previous call to
             ``getRobotPositionOffset``, for comparing previous state. Passing
             None will return an offset of 0 and a newly initialized state
