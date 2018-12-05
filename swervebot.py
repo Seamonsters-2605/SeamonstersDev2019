@@ -3,6 +3,7 @@ import wpilib
 import ctre
 import seamonsters as sea
 import swervebot_app
+from robotpy_ext.common_drivers.navx import AHRS
 
 # rotate motor: 3138 ticks per rotation
 
@@ -11,50 +12,34 @@ class SwerveBot(sea.GeneratorBot):
     def robotInit(self):
         self.joystick = wpilib.Joystick(0)
 
-        wheelADriveTalon = ctre.WPI_TalonSRX(1)
-        wheelARotateTalon = ctre.WPI_TalonSRX(0)
-
-        wheelBDriveTalon = ctre.WPI_TalonSRX(3)
-        wheelBRotateTalon = ctre.WPI_TalonSRX(2)
-
-        wheelCDriveTalon = ctre.WPI_TalonSRX(5)
-        wheelCRotateTalon = ctre.WPI_TalonSRX(4)
-
-        for talon in [wheelADriveTalon, wheelARotateTalon,
-                      wheelBDriveTalon, wheelBRotateTalon,
-                      wheelCDriveTalon, wheelCRotateTalon]:
-            talon.configSelectedFeedbackSensor(
-                ctre.FeedbackDevice.QuadEncoder, 0, 0)
-
-        wheelADrive = sea.AngledWheel(wheelADriveTalon, .75, .75, 0,
-                                      encoderCountsPerFoot=31291.1352,
-                                      maxVoltageVelocity=16)
-        wheelBDrive = sea.AngledWheel(wheelBDriveTalon, -.75, .75, 0,
-                                      encoderCountsPerFoot=31291.1352,
-                                      maxVoltageVelocity=16)        
-        wheelCDrive = sea.AngledWheel(wheelCDriveTalon, 0, -.75, 0,
-                                      encoderCountsPerFoot=31291.1352,
-                                      maxVoltageVelocity=16)
-
-        wheelARotate = sea.SwerveWheel(wheelADrive, wheelARotateTalon,
-                                       1612.8, True)
-        wheelBRotate = sea.SwerveWheel(wheelBDrive, wheelBRotateTalon,
-                                       1612.8, True)
-        wheelCRotate = sea.SwerveWheel(wheelCDrive, wheelCRotateTalon,
-                                       1680, True) # 1670, 1686, 1680
         self.superDrive = sea.SuperHolonomicDrive()
         sea.setSimulatedDrivetrain(self.superDrive)
 
-        for wheelrotate in [wheelARotate, wheelBRotate, wheelCRotate]:
-            self.superDrive.addWheel(wheelrotate)
-
-        for wheel in self.superDrive.wheels:
-            wheel.driveMode = ctre.ControlMode.PercentOutput
+        self.makeSwerveWheel(1, 0, .75, .75, 1612.8, True)
+        self.makeSwerveWheel(3, 2, -.75, .75, 1612.8, True)
+        self.makeSwerveWheel(5, 4, 0, -.75, 1680, True) # 1670, 1686, 1680
 
         self.robotOrigin = None
 
         self.app = None
         sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
+        self.ahrs = AHRS.create_spi()
+
+    def makeSwerveWheel(self, driveTalonNum, rotateTalonNum, xPos, yPos,
+                        encoderCountsPerRev, reverseSteerMotor):
+        driveTalon = ctre.WPI_TalonSRX(driveTalonNum)
+        rotateTalon = ctre.WPI_TalonSRX(rotateTalonNum)
+        driveTalon.configSelectedFeedbackSensor(ctre.FeedbackDevice.QuadEncoder, 0, 0)
+        rotateTalon.configSelectedFeedbackSensor(ctre.FeedbackDevice.QuadEncoder, 0, 0)
+
+        angledWheel = sea.AngledWheel(driveTalon, xPos, yPos, 0,
+                                      encoderCountsPerFoot=31291.1352,
+                                      maxVoltageVelocity=16)
+        angledWheel.driveMode = ctre.ControlMode.PercentOutput
+
+        swerveWheel = sea.SwerveWheel(angledWheel, rotateTalon, encoderCountsPerRev, reverseSteerMotor)
+
+        self.superDrive.addWheel(swerveWheel)
 
     def teleop(self):
         if self.app is not None:
