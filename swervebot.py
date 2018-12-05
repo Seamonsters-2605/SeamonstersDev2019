@@ -18,6 +18,7 @@ class SwerveBot(sea.GeneratorBot):
         self.makeSwerveWheel(1, 0, .75, .75, 1612.8, True)
         self.makeSwerveWheel(3, 2, -.75, .75, 1612.8, True)
         self.makeSwerveWheel(5, 4, 0, -.75, 1680, True) # 1670, 1686, 1680
+        self.setDriveMode(ctre.ControlMode.PercentOutput)
 
         self.robotOrigin = None
 
@@ -35,11 +36,16 @@ class SwerveBot(sea.GeneratorBot):
         angledWheel = sea.AngledWheel(driveTalon, xPos, yPos, 0,
                                       encoderCountsPerFoot=31291.1352,
                                       maxVoltageVelocity=16)
-        angledWheel.driveMode = ctre.ControlMode.PercentOutput
 
         swerveWheel = sea.SwerveWheel(angledWheel, rotateTalon, encoderCountsPerRev, reverseSteerMotor)
 
         self.superDrive.addWheel(swerveWheel)
+    
+    def setDriveMode(self, mode):
+        print("Drive mode:", mode.name)
+        for wheel in self.superDrive.wheels:
+            if isinstance(wheel, sea.SwerveWheel):
+                wheel.angledWheel.driveMode = mode
 
     def teleop(self):
         if self.app is not None:
@@ -66,20 +72,11 @@ class SwerveBot(sea.GeneratorBot):
                 self.app.moveRobot(moveMag, moveDir, moveTurn)
 
             if self.joystick.getRawButtonPressed(4):
-                print("PercentOutput mode")
-                for wheel in self.superDrive.wheels:
-                    if isinstance(wheel, sea.SwerveWheel):
-                        wheel.angledWheel.driveMode = ctre.ControlMode.PercentOutput
+                self.setDriveMode(ctre.ControlMode.PercentOutput)
             if self.joystick.getRawButtonPressed(3):
-                print("Velocity mode")
-                for wheel in self.superDrive.wheels:
-                    if isinstance(wheel, sea.SwerveWheel):
-                        wheel.angledWheel.driveMode = ctre.ControlMode.Velocity
+                self.setDriveMode(ctre.ControlMode.Velocity)
             if self.joystick.getRawButtonPressed(5):
-                print("Position mode")
-                for wheel in self.superDrive.wheels:
-                    if isinstance(wheel, sea.SwerveWheel):
-                        wheel.angledWheel.driveMode = ctre.ControlMode.Position
+                self.setDriveMode(ctre.ControlMode.Position)
 
             yield
 
