@@ -42,7 +42,7 @@ class SwerveBot(sea.GeneratorBot):
         self.superDrive.addWheel(swerveWheel)
     
     def setDriveMode(self, mode):
-        print("Drive mode:", mode.name)
+        print("Drive mode:", mode)
         for wheel in self.superDrive.wheels:
             if isinstance(wheel, sea.SwerveWheel):
                 wheel.angledWheel.driveMode = mode
