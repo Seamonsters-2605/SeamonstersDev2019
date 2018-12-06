@@ -23,7 +23,7 @@ class SwerveBot(sea.GeneratorBot):
         self.robotOrigin = None
 
         self.app = None
-        #sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
+        sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
         self.ahrs = AHRS.create_spi()
 
     def makeSwerveWheel(self, driveTalonNum, rotateTalonNum, xPos, yPos,
@@ -49,7 +49,7 @@ class SwerveBot(sea.GeneratorBot):
 
     def autonomous(self):
         self.setDriveMode(ctre.ControlMode.Position)
-        pathFollower = sea.PathFollower(self.superDrive)
+        pathFollower = sea.PathFollower(self.superDrive, self.ahrs)
         data = sea.readDataFile("testpath.txt")
         yield from pathFollower.followPathData(data, math.radians(5))
 
