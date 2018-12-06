@@ -23,7 +23,7 @@ class SwerveBot(sea.GeneratorBot):
         self.robotOrigin = None
 
         self.app = None
-        sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
+        #sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
         self.ahrs = AHRS.create_spi()
 
     def makeSwerveWheel(self, driveTalonNum, rotateTalonNum, xPos, yPos,
@@ -49,13 +49,9 @@ class SwerveBot(sea.GeneratorBot):
 
     def autonomous(self):
         self.setDriveMode(ctre.ControlMode.Position)
-        pathFollower = sea.PathFollower(self.superDrive, 0, 0, 0)
-        print("Step 1")
-        yield from sea.untilTrue(pathFollower.driveToPointGenerator(0, 10, 0, 3, 0.1))
-        print("Step 2")
-        yield from sea.untilTrue(pathFollower.driveToPointGenerator(0, 10, math.radians(90), 3, 0.1))
-        print("Step 3")
-        yield from sea.untilTrue(pathFollower.driveToPointGenerator(10, 10, 0, 3, 0.1))
+        pathFollower = sea.PathFollower(self.superDrive)
+        data = sea.readDataFile("testpath.txt")
+        yield from pathFollower.followPathData(data, math.radians(5))
 
     def teleop(self):
         if self.app is not None:
