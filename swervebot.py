@@ -47,6 +47,16 @@ class SwerveBot(sea.GeneratorBot):
             if isinstance(wheel, sea.SwerveWheel):
                 wheel.angledWheel.driveMode = mode
 
+    def autonomous(self):
+        self.setDriveMode(ctre.ControlMode.Position)
+        pathFollower = sea.PathFollower(self.superDrive, 0, 0, 0)
+        print("Step 1")
+        yield from sea.untilTrue(pathFollower.driveToPointGenerator(0, 10, 0, 3, 0.1))
+        print("Step 2")
+        yield from sea.untilTrue(pathFollower.driveToPointGenerator(0, 10, math.radians(90), 3, 0.1))
+        print("Step 3")
+        yield from sea.untilTrue(pathFollower.driveToPointGenerator(10, 10, 0, 3, 0.1))
+
     def teleop(self):
         if self.app is not None:
             self.app.clearEvents()
