@@ -47,13 +47,19 @@ class SwerveBot(sea.GeneratorBot):
             if isinstance(wheel, sea.SwerveWheel):
                 wheel.angledWheel.driveMode = mode
 
+    def resetPositions(self):
+        for wheel in self.superDrive.wheels:
+            wheel.resetPosition()
+
     def autonomous(self):
+        self.resetPositions()
         self.setDriveMode(ctre.ControlMode.Position)
         pathFollower = sea.PathFollower(self.superDrive, self.ahrs)
         data = sea.readDataFile("testpath.txt")
         yield from pathFollower.followPathData(data, math.radians(5))
 
     def teleop(self):
+        self.resetPositions()
         if self.app is not None:
             self.app.clearEvents()
         # reset joystick buttons
@@ -67,7 +73,7 @@ class SwerveBot(sea.GeneratorBot):
             mag = sea.deadZone(self.joystick.getMagnitude())
             mag *= 3 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() + math.pi/2
-            turn = sea.deadZone(self.joystick.getRawAxis(3))
+            turn = -sea.deadZone(self.joystick.getRawAxis(3))
             turn *= math.radians(120) # maximum radians per second
 
             self.superDrive.drive(mag, direction, turn)
