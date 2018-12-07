@@ -41,6 +41,11 @@ class PathFollower:
 
     def waitForOrientWheelsGenerator(self, magnitude, direction, turn,
             angleTolerance):
+        """
+        Orient wheels to prepare to drive with the given mag/dir/turn, and wait
+        until all wheels are within ``angleTolerance`` radians of their target
+        direction.
+        """
         if magnitude == 0 and turn == 0:
             return
         done = False
@@ -130,11 +135,21 @@ class PathFollower:
         return (float(n) for n in line)
 
     def followPathData(self, data, wheelAngleTolerance):
-        lastTime, x, y, angle = self._readDataLine(data[0])
-        self.setPosition(x, y, math.radians(angle))
+        """
+        Follow path data read from a file. ``data`` should be a list of line
+        tuples returned by ``sea.readDataFile``.
+        """
+        lastTime, lastX, lastY, lastAngle = self._readDataLine(data[0])
+        self.setPosition(lastX, lastY, math.radians(lastAngle))
         for point in data[1:]:
             t, x, y, angle = self._readDataLine(point)
-            yield from seamonsters.generators.untilTrue(
-                self.driveToPointGenerator(x, y, math.radians(angle),
-                    t - lastTime, wheelAngleTolerance))
+            if lastX == x and lastY == y and lastAngle == angle:
+                yield from seamonsters.generators.wait(int((t - lastTime) * 50))
+            else:
+                yield from seamonsters.generators.untilTrue(
+                    self.driveToPointGenerator(x, y, math.radians(angle),
+                        t - lastTime, wheelAngleTolerance))
             lastTime = t
+            lastX = x
+            lastY = y
+            lastAngle = angle
