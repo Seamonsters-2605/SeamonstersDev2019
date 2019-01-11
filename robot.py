@@ -66,6 +66,8 @@ class CompetitionBot2019(sea.GeneratorBot):
             if self.app != None:
                 self.app.encoderPositionLbl.set_text('%.3f, %.3f, %.3f' %
                     (self.robotX, self.robotY, math.degrees(self.robotAngle)))
+                self.app.navxPositionLbl.set_text('%.3f, %.3f, %.3f' %
+                    (self.ahrs.getDisplacementX(), self.ahrs.getDisplacementY(), self.ahrs.getAngle()))
 
             yield
 
