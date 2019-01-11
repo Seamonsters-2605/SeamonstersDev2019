@@ -28,8 +28,7 @@ class CompetitionBot2019(sea.GeneratorBot):
     def setDriveMode(self, mode):
         print("Drive mode:", mode)
         for wheel in self.superDrive.wheels:
-            if isinstance(wheel, sea.SwerveWheel):
-                wheel.angledWheel.driveMode = mode
+            wheel.angledWheel.driveMode = mode
 
     def resetPositions(self):
         for wheel in self.superDrive.wheels:
@@ -70,6 +69,13 @@ class CompetitionBot2019(sea.GeneratorBot):
                     (self.ahrs.getDisplacementX(), self.ahrs.getDisplacementY(), self.ahrs.getAngle()))
 
             yield
+    
+    # dashboard callbacks
+
+    def c_zeroSteering(self, button):
+        for wheel in self.superDrive.wheels:
+            wheel.zeroSteering()
+
 
 if __name__ == "__main__":
     wpilib.run(CompetitionBot2019)
