@@ -13,7 +13,12 @@ class CompetitionBot2019(sea.GeneratorBot):
 
         self.superDrive = drivetrain.initDrivetrain()
         self.setDriveMode(ctre.ControlMode.PercentOutput)
-        self.robotOrigin = None # for encoder-based position tracking
+
+        # for encoder-based position tracking
+        self.robotOrigin = None
+        self.robotX = 0
+        self.robotY = 0
+        self.robotAngle = 0
 
         self.ahrs = navx.AHRS.create_spi()
 
@@ -50,6 +55,17 @@ class CompetitionBot2019(sea.GeneratorBot):
             turn *= math.radians(120) # maximum radians per second
 
             self.superDrive.drive(mag, direction, turn)
+
+            # encoder based position tracking
+            moveMag, moveDir, moveTurn, self.robotOrigin = \
+                self.superDrive.getRobotPositionOffset(self.robotOrigin)
+            self.robotX += moveMag * math.cos(moveDir + self.robotAngle)
+            self.robotY += moveMag * math.sin(moveDir + self.robotAngle)
+            self.robotAngle += moveTurn
+
+            if self.app != None:
+                self.app.encoderPositionLbl.set_text('%.3f, %.3f, %.3f' %
+                    (self.robotX, self.robotY, math.degrees(self.robotAngle)))
 
             yield
 

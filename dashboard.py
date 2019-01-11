@@ -8,5 +8,12 @@ class CompetitionBotDashboard(sea.Dashboard):
 
         root = gui.VBox(width=600)
 
+        self.encoderPositionLbl = gui.Label("[encoder position]")
+        root.append(self.encoderPositionLbl)
+        self.navxPositionLbl = gui.Label("[navx position]")
+        root.append(self.navxPositionLbl)
+        self.visionPositionLbl = gui.Label("[vision position]")
+        root.append(self.visionPositionLbl)
+
         appCallback(self)
         return root
