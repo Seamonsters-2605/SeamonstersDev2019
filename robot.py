@@ -75,6 +75,15 @@ class CompetitionBot2019(sea.GeneratorBot):
     def c_zeroSteering(self, button):
         for wheel in self.superDrive.wheels:
             wheel.zeroSteering()
+    
+    def c_percentOutputMode(self, button):
+        self.setDriveMode(ctre.ControlMode.PercentOutput)
+    
+    def c_velocityMode(self, button):
+        self.setDriveMode(ctre.ControlMode.Velocity)
+    
+    def c_positionMode(self, button):
+        self.setDriveMode(ctre.ControlMode.Position)
 
 
 if __name__ == "__main__":

@@ -19,5 +19,18 @@ class CompetitionBotDashboard(sea.Dashboard):
         zeroSteeringBtn.set_on_click_listener(self.queuedEvent(robot.c_zeroSteering))
         root.append(zeroSteeringBtn)
 
+        driveModeBox = gui.HBox()
+        root.append(driveModeBox)
+
+        percentOutputBtn = gui.Button("Voltage")
+        percentOutputBtn.set_on_click_listener(self.queuedEvent(robot.c_percentOutputMode))
+        driveModeBox.append(percentOutputBtn)
+        velocityBtn = gui.Button("Velocity")
+        velocityBtn.set_on_click_listener(self.queuedEvent(robot.c_velocityMode))
+        driveModeBox.append(velocityBtn)
+        positionBtn = gui.Button("Position")
+        positionBtn.set_on_click_listener(self.queuedEvent(robot.c_positionMode))
+        driveModeBox.append(positionBtn)
+
         appCallback(self)
         return root
