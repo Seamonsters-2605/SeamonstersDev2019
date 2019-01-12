@@ -14,7 +14,7 @@ def initDrivetrain():
     return superDrive
 
 def _makeSwerveWheel(superDrive, driveTalonNum, rotateTalonNum, xPos, yPos,
-                    encoderCountsPerRev, reverseSteerMotor):
+                     reverseSteerMotor):
     driveTalon = ctre.WPI_TalonSRX(driveTalonNum)
     rotateTalon = ctre.WPI_TalonSRX(rotateTalonNum)
     driveTalon.configSelectedFeedbackSensor(ctre.FeedbackDevice.QuadEncoder, 0, 0)
