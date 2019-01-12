@@ -1,6 +1,8 @@
 import remi.gui as gui
 import seamonsters as sea
 
+SPACE = 10
+
 class MotorTester(sea.Dashboard):
 
     def main(self, robot, appCallback):
@@ -17,37 +19,43 @@ class MotorTester(sea.Dashboard):
         self.talonBox = gui.SpinBox(default_value=0, min_value=0, max_value=99, step=1)
         self.talonBox.set_on_change_listener(self.queuedEvent(robot.c_setTalon))
         root.append(sea.hBoxWith(
-            gui.Label('Talon:&nbsp;'),
+            gui.Label('Talon:'),
+            gui.HBox(width=SPACE),
             self.talonBox
         ))
 
         self.selectedTalonLbl = gui.Label('')
         root.append(sea.hBoxWith(
-            gui.Label('Selected talon:&nbsp;'),
+            gui.Label('Selected talon:'),
+            gui.HBox(width=SPACE),
             self.selectedTalonLbl
         ))
 
         self.outputVoltageLbl = gui.Label('')
         root.append(sea.hBoxWith(
-            gui.Label('Output voltage:&nbsp;'),
+            gui.Label('Output voltage:'),
+            gui.HBox(width=SPACE),
             self.outputVoltageLbl
         ))
 
         self.outputCurrentLbl = gui.Label('')
         root.append(sea.hBoxWith(
-            gui.Label('Output current:&nbsp;'),
+            gui.Label('Output current:'),
+            gui.HBox(width=SPACE),
             self.outputCurrentLbl
         ))
 
         self.encoderPositionLbl = gui.Label('')
         root.append(sea.hBoxWith(
-            gui.Label('Encoder position:&nbsp;'),
+            gui.Label('Encoder position:'),
+            gui.HBox(width=SPACE),
             self.encoderPositionLbl
         ))
 
         self.encoderVelocityLbl = gui.Label('')
         root.append(sea.hBoxWith(
-            gui.Label('Encoder velocity:&nbsp;'),
+            gui.Label('Encoder velocity:'),
+            gui.HBox(width=SPACE),
             self.encoderVelocityLbl
         ))
 
@@ -84,7 +92,8 @@ class MotorTester(sea.Dashboard):
         holdButton.set_on_click_listener(
             self.queuedEvent(robot.c_updatePosition), self.offsetBox)
         controlTabBox.add_tab(sea.hBoxWith(
-            gui.Label('Offset:&nbsp;'),
+            gui.Label('Offset:'),
+            gui.HBox(width=SPACE),
             self.offsetBox,
             holdButton
         ), 'Hold Position', self.queuedEvent(robot.c_updateDisabled))
