@@ -3,7 +3,7 @@ import wpilib
 import ctre
 import seamonsters as sea
 import swervebot_app
-from robotpy_ext.common_drivers.navx import AHRS
+import navx
 
 # rotate motor: 3138 ticks per rotation
 
@@ -24,7 +24,7 @@ class SwerveBot(sea.GeneratorBot):
 
         self.app = None
         sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
-        self.ahrs = AHRS.create_spi()
+        self.ahrs = navx.AHRS.create_spi()
 
     def makeSwerveWheel(self, driveTalonNum, rotateTalonNum, xPos, yPos,
                         encoderCountsPerRev, reverseSteerMotor):
