@@ -14,7 +14,7 @@ class MotorTester(sea.Dashboard):
         title.style['font-weight'] = 'bold'
         root.append(title)
 
-        self.talonBox = gui.SpinBox(default_value='0', min=0, max=99, step=1)
+        self.talonBox = gui.SpinBox(default_value=0, min_value=0, max_value=99, step=1)
         self.talonBox.set_on_change_listener(self.queuedEvent(robot.c_setTalon))
         root.append(sea.hBoxWith(
             gui.Label('Talon:&nbsp;'),
