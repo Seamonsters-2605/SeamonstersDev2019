@@ -61,7 +61,7 @@ class SwerveBot(sea.GeneratorBot):
         self.resetPositions()
         self.setDriveMode(ctre.ControlMode.Position)
         data = sea.readDataFile("testpath.txt")
-        yield from self.pathFollower.followPathData(data, math.radians(5))
+        yield from self.pathFollower.followPathData(data)
 
     def teleop(self):
         self.pathFollower.updateRobotPosition()
