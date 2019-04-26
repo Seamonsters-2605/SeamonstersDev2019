@@ -1,20 +1,19 @@
 import math
 import ctre
-import seamonsters.drive
+import seamonsters as sea
+import time
 
 TWO_PI = math.pi * 2
 
+# for AngledWheel
+CHECK_DRIVE_ENCODER_CYCLE = 10 # cycles
+MAX_DRIVE_ERROR = 6.0 # feet
 MAX_POSITION_OCCURENCE = 10
-CHECK_ENCODER_CYCLE = 10
-# if circle = math.pi*2, returns the smallest angle between two directions
-# on a circle
-def _circleDistance(a, b, circle):
-    diff = b - a
-    while diff > circle / 2:
-        diff -= circle
-    while diff < -circle / 2:
-        diff += circle
-    return diff
+
+# for SwerveWheel
+CHECK_SWERVE_ENCODER_CYCLE = 50 # cycles
+MAX_SWERVE_ERROR = 2 * math.pi / 3 # radians
+
 
 def _iteratePairs(list):
     for i in range(0, len(list) - 1):
@@ -35,6 +34,10 @@ class Wheel:
         """
         self.x = float(x)
         self.y = float(y)
+        # if True, all calls to drive() or stop() will disable
+        self.disabled = False
+        # list of strings describing errors
+        self.faults = []
 
     def limitMagnitude(self, magnitude, direction):
         """
@@ -56,10 +59,29 @@ class Wheel:
             zero, the wheel will attempt to orient in the given direction
         :param direction: radians. 0 is right, positive counter-clockwise
         """
-    
+        if self.disabled:
+            self.disable()
+        else:
+            self._drive(magnitude, direction)
+
+    def _drive(self, magnitude, direction):
+        pass
+
     def stop(self):
         """
         Stop driving.
+        """
+        if self.disabled:
+            self.disable()
+        else:
+            self._stop()
+
+    def _stop(self):
+        pass
+
+    def disable(self):
+        """
+        Disable motors. Calling drive() will enable them again.
         """
 
     def resetPosition(self):
@@ -112,12 +134,12 @@ class CasterWheel(Wheel):
         self._storedDirection = 0
         self._distance = 0
 
-    def drive(self, magnitude, direction):
+    def _drive(self, magnitude, direction):
         self._storedMagnitude = magnitude
         self._storedDirection = direction
-        self._distance += magnitude / 50
+        self._distance += magnitude / sea.ITERATIONS_PER_SECOND
     
-    def stop(self):
+    def _stop(self):
         self._storedMagnitude = 0
 
     def getRealPosition(self):
@@ -150,13 +172,17 @@ class TestWheel(CasterWheel):
         super().__init__(x, y)
         self.name = name
 
-    def drive(self, magnitude, direction):
-        super().drive(magnitude, direction)
+    def _drive(self, magnitude, direction):
+        super()._drive(magnitude, direction)
         print(self.name, "Mag:", magnitude, "Dir:", math.degrees(direction))
 
-    def stop(self):
-        super().stop()
+    def _stop(self):
+        super()._stop()
         print(self.name, "stop")
+
+    def disable(self):
+        super().disable()
+        print(self.name, "disable")
 
 
 class AngledWheel(Wheel):
@@ -165,8 +191,8 @@ class AngledWheel(Wheel):
     change on its own. It uses a TalonSRX to drive.
     """
 
-    def __init__(self, motor, x, y, angle, encoderCountsPerFoot,
-                 maxVoltageVelocity, reverse=False):
+    def __init__(self, motor: ctre.WPI_TalonSRX, x, y, angle,
+                 encoderCountsPerFoot, maxVoltageVelocity, reverse=False):
         """
         :param motor: a TalonSRX
         :param x: X position in feet
@@ -186,13 +212,14 @@ class AngledWheel(Wheel):
         self.reverse = reverse
 
         self.driveMode = ctre.ControlMode.PercentOutput
-        self.encoderWorking = True
+        self.realTime = False
 
         self._motorState = None
         self._positionTarget = 0
         self._encoderCheckCount = 0
         self._oldPosition = 0
         self._positionOccurence = 0
+        self._prevTime = time.time()
 
     def limitMagnitude(self, magnitude, direction):
         # TODO: check position error in this function instead, and factor it
@@ -204,38 +231,52 @@ class AngledWheel(Wheel):
 
     def _encoderCheck(self):
         newPosition = self.motor.getSelectedSensorPosition(0)
-        #print(newPosition)
-        #print(self.oldPosition)
+        err = self.motor.getLastError()
+        if err == ctre.ErrorCode.RxTimeout:
+            print("Stale CAN frame so we won't check for errors :(",
+                self.motor.getDeviceID())
+            return
+        elif err != ctre.ErrorCode.OK:
+            print("Talon error", self.motor.getDeviceID(), err)
+
         if abs(newPosition - self._oldPosition) <= 1:
             self._positionOccurence += 1
         else:
             self._positionOccurence = 0
-            self.encoderWorking = True
             self._oldPosition = newPosition
 
         if self._positionOccurence >= MAX_POSITION_OCCURENCE:
-            self.encoderWorking = False
+            self.faults.append("Encoder not moving")
+            self._positionOccurence = 0
 
         if self.driveMode == ctre.ControlMode.Position:
             # TODO: this is arbitrary
-            maxError = self.maxVoltageVelocity * self.encoderCountsPerFoot / 2
+            maxError = self.encoderCountsPerFoot * MAX_DRIVE_ERROR
             if abs(newPosition - self._positionTarget) > maxError:
-                print("Incremental position error!", self.motor.getDeviceID())
+                self.faults.append("Can't reach target")
                 self._positionTarget = newPosition
 
-    def drive(self, magnitude, direction):
+    def _drive(self, magnitude, direction):
         magnitude *= math.cos(direction - self.angle)
         if self.reverse:
             magnitude = -magnitude
-        
+
         if self.driveMode == ctre.ControlMode.Position \
                 and self._motorState != self.driveMode:
             self._positionTarget = self.motor.getSelectedSensorPosition(0)
+            self._encoderCheckCount = 0
+
+        curTime = time.time()
+        if self.realTime and self._motorState == self.driveMode:
+            tDiff = curTime - self._prevTime
+        else:
+            tDiff = 1 / sea.ITERATIONS_PER_SECOND
+        self._prevTime = curTime
 
         encoderCountsPerSecond = magnitude * self.encoderCountsPerFoot
         # always incremented, even if not in position mode
         # used by getTargetPosition
-        self._positionTarget += encoderCountsPerSecond / 50.0
+        self._positionTarget += encoderCountsPerSecond * tDiff
 
         if self.driveMode == ctre.ControlMode.Disabled:
             if self._motorState != self.driveMode:
@@ -249,20 +290,27 @@ class AngledWheel(Wheel):
 
         self._motorState = self.driveMode
 
-        if abs(encoderCountsPerSecond) > 400: # TODO: document constant
-            if self._encoderCheckCount % CHECK_ENCODER_CYCLE == 0:
+        self._encoderCheckCount += 1
+        # TODO: document constant
+        if abs(encoderCountsPerSecond) > 400 \
+                and not self.driveMode == ctre.ControlMode.Disabled:
+            if self._encoderCheckCount % CHECK_DRIVE_ENCODER_CYCLE == 0:
                 # getSelectedSensorPosition is slow so only check a few times
                 # per second
                 self._encoderCheck()
         else:
             self._positionOccurence = 0
-        self._encoderCheckCount += 1
 
-    def stop(self):
+    def _stop(self):
         self.drive(0, 0)
 
+    def disable(self):
+        if self._motorState != ctre.ControlMode.Disabled:
+            self.motor.disable()
+            self._motorState = ctre.ControlMode.Disabled
+
     def resetPosition(self):
-        self._motorState = ctre.ControlMode.Disabled
+        self._motorState = None
     
     def _sensorPositionToDistance(self, pos):
         if self.reverse:
@@ -301,8 +349,8 @@ class MecanumWheel(AngledWheel):
     def limitMagnitude(self, magnitude, direction):
         return super().limitMagnitude(magnitude * MecanumWheel.SQRT_2, direction)
 
-    def drive(self, magnitude, direction):
-        return super().drive(magnitude * MecanumWheel.SQRT_2, direction)
+    def _drive(self, magnitude, direction):
+        return super()._drive(magnitude * MecanumWheel.SQRT_2, direction)
 
     def getRealPosition(self):
         return super().getRealPosition() / MecanumWheel.SQRT_2
@@ -320,7 +368,8 @@ class SwerveWheel(Wheel):
     rotates using a TalonSRX.
     """
 
-    def __init__(self, angledWheel, steerMotor, encoderCountsPerRev,
+    def __init__(self, angledWheel: AngledWheel, steerMotor: ctre.WPI_TalonSRX,
+                 encoderCountsPerRev, rotationVelocity, offsetX = 0, offsetY = 0,
                  reverseSteerMotor=False):
         """
         ``zeroSteering()`` is called in __init__.
@@ -338,16 +387,27 @@ class SwerveWheel(Wheel):
         self.angledWheel = angledWheel
         self.steerMotor = steerMotor
         self.encoderCountsPerRev = encoderCountsPerRev
+        self.rotationVelocity = rotationVelocity
+        self.offsetX = offsetX
+        self.offsetY = offsetY
         self.reverseSteerMotor = reverseSteerMotor
+
         self.zeroSteering()
         self._targetDirection = angledWheel.angle
+        self._motorDisabled = True
+        self._encoderCheckCount = 0
 
-    def zeroSteering(self):
+    def zeroSteering(self, currentAngle=0):
         """
-        Reset the origin (rotation of wheel when facing right) to the current
-        position of the steer motor.
+        Reset the origin (rotation of wheel when facing right) so that the
+        current position of the steer motor is ``currentAngle`` (defaults 0).
         """
         self._steerOrigin = self.steerMotor.getSelectedSensorPosition(0)
+        offset = currentAngle * self.encoderCountsPerRev / TWO_PI
+        if self.reverseSteerMotor:
+            offset = -offset
+        self._steerOrigin -= offset
+        self._simulatedCurrentDirection = self._getCurrentSteeringAngle()
 
     def limitMagnitude(self, magnitude, direction):
         return self.angledWheel.limitMagnitude(magnitude, direction)
@@ -360,25 +420,58 @@ class SwerveWheel(Wheel):
         return offset * TWO_PI / self.encoderCountsPerRev
 
     def _setSteering(self, direction):
+        self._targetDirection = direction
         pos = direction * self.encoderCountsPerRev / TWO_PI
         if self.reverseSteerMotor:
             pos = -pos
+        if self._motorDisabled:
+            self.steerMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self._motorDisabled = False
         self.steerMotor.set(ctre.ControlMode.Position, pos + self._steerOrigin)
 
-    def drive(self, magnitude, direction):
-        currentAngle = self._getCurrentSteeringAngle()
+    def _updateMotorPosition(self):
+        if self._motorDisabled:
+            return
+        change = self.rotationVelocity / sea.ITERATIONS_PER_SECOND
+        if abs(self._simulatedCurrentDirection - self._targetDirection) < change:
+            self._simulatedCurrentDirection = self._targetDirection
+        elif self._simulatedCurrentDirection > self._targetDirection:
+            self._simulatedCurrentDirection -= change
+        else:
+            self._simulatedCurrentDirection += change
+        
+        self._encoderCheckCount += 1
+        if self._encoderCheckCount % CHECK_SWERVE_ENCODER_CYCLE == 0:
+            curPos = self._getCurrentSteeringAngle()
+            if abs(curPos - self._simulatedCurrentDirection) > MAX_SWERVE_ERROR:
+                self.faults.append("Can't reach target!")
+
+    def _drive(self, magnitude, direction):
+        self._updateMotorPosition()
+        currentAngle = self._simulatedCurrentDirection
         # steering should never rotate more than 90 degrees from any position
-        angleDiff = _circleDistance(currentAngle, direction, math.pi)
-        self._targetDirection = currentAngle + angleDiff
-        #print(math.degrees(currentAngle), math.degrees(self._targetDirection))
-        self._setSteering(self._targetDirection)
+        angleDiff = sea.circleDistance(currentAngle, direction, math.pi)
+        target = currentAngle + angleDiff
+        #print(math.degrees(currentAngle), math.degrees(target))
+        self._setSteering(target)
         self.angledWheel.angle = currentAngle
+        self.angledWheel.x = self.x + math.cos(currentAngle) * self.offsetX - math.sin(currentAngle) * self.offsetY
+        self.angledWheel.y = self.y + math.sin(currentAngle) * self.offsetX + math.cos(currentAngle) * self.offsetY
         self.angledWheel.drive(magnitude, direction)
 
-    def stop(self):
+    def _stop(self):
+        self._updateMotorPosition()
         self.angledWheel.stop()
 
+    def disable(self):
+        self.angledWheel.disable()
+        if not self._motorDisabled:
+            self.steerMotor.disable()
+            self.steerMotor.setNeutralMode(ctre.NeutralMode.Coast)
+            self._motorDisabled = True
+
     def resetPosition(self):
+        self._simulatedCurrentDirection = self._getCurrentSteeringAngle()
         self.angledWheel.resetPosition()
 
     def getRealPosition(self):
@@ -397,10 +490,12 @@ class SwerveWheel(Wheel):
         return self.angledWheel.getRealVelocity()
 
 
-class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
+class SuperHolonomicDrive:
 
     def __init__(self):
         self.wheels = []
+        self.autoDisableTime = sea.ITERATIONS_PER_SECOND # 1 second
+        self._disableCounter = 0
 
     def addWheel(self, wheel):
         """
@@ -409,7 +504,30 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
         """
         self.wheels.append(wheel)
 
+    def undisable(self):
+        self._disableCounter = 0
+
     def drive(self, magnitude, direction, turn):
+        """
+        Drive the robot. This should be called 50 times per second.
+
+        If drive is called with a magnitude/turn of 0 for more than
+        ``autoDisableTime`` iterations, all wheels will be disabled.
+
+        :param magnitude: feet per second
+        :param direction: radians. 0 is right, positive counter-clockwise
+        :param turn: radians per second. positive counter-clockwise
+        :return: the scale of the actual output speed, as a fraction of the
+            input magnitude and turn components
+        """
+        if magnitude == 0 and turn == 0:
+            self._disableCounter += 1
+        else:
+            self._disableCounter = 0
+        if self._disableCounter > self.autoDisableTime:
+            self.disable()
+            return 1.0
+
         moveX = math.cos(direction) * magnitude
         moveY = math.sin(direction) * magnitude
 
@@ -439,6 +557,7 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
         """
         Orient the wheels as if the robot was driving, but don't move.
         """
+        self._disableCounter = 0
         moveX = math.cos(direction) * magnitude
         moveY = math.sin(direction) * magnitude
 
@@ -448,6 +567,15 @@ class SuperHolonomicDrive(seamonsters.drive.DriveInterface):
             if wheelVectorX != 0 and wheelVectorY != 0:
                 wheelDir = math.atan2(wheelVectorY, wheelVectorX)
                 wheel.drive(0, wheelDir)
+
+    def disable(self):
+        """
+        Disable all motors. Calling drive() will enable them again.
+        """
+        # calling drive(0,x,0) after this will keep motors disabled
+        self._disableCounter = self.autoDisableTime + 1
+        for wheel in self.wheels:
+            wheel.disable()
 
     def _calcWheelVector(self, wheel, moveX, moveY, turn):
         return moveX - wheel.y * turn, moveY + wheel.x * turn

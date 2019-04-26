@@ -1,11 +1,17 @@
+import os
 import sys
 import queue
 import threading
 import remi
 import remi.gui as gui
 import socket
+import time
+import logging
+import seamonsters as sea
 
 DASHBOARD_PORT = 5805
+
+logger = logging.getLogger("seamonsters")
 
 def hBoxWith(*args, **kwargs):
     """
@@ -41,30 +47,50 @@ def startDashboard(robot, dashboardClass):
     robot.app = None
 
     def appCallback(app):
-        print("Dashboard started")
+        logger.info("Dashboard initialized")
         robot.app = app
 
     def startDashboardThread(robot, appCallback):
         if sys.argv[1] == 'sim':
-            # doesn't work with 127.0.0.1 or localhost on school laptops
-            try:
-                address = socket.gethostbyname(socket.gethostname())
-            except socket.gaierror:
+            if sys.platform == 'darwin': # macOS
                 # issue with macOS Sierra and later
                 address = '127.0.0.1'
+            else:
+                # doesn't work with 127.0.0.1 or localhost on school laptops
+                address = socket.gethostbyname(socket.gethostname())
             remi.start(dashboardClass, start_browser=True,
                 address=address, port=DASHBOARD_PORT, userdata=(robot, appCallback,))
         elif sys.argv[1] == 'depoly':
             pass
         elif sys.argv[1] == 'run': # run on robot
-            remi.start(dashboardClass, start_browser=False,
-                address='10.26.5.2', port=DASHBOARD_PORT, userdata=(robot, appCallback,))
+            while True:
+                try:
+                    remi.start(dashboardClass, start_browser=False,
+                        address='10.26.5.2', port=DASHBOARD_PORT, userdata=(robot, appCallback,))
+                    break
+                except:
+                    logger.warning("Dashboard couldn't start, trying again in 5 seconds")
+                    time.sleep(5.0)
 
     thread = threading.Thread(target=startDashboardThread,
                                 args=(robot, appCallback))
     thread.daemon = True
     thread.start()
 
+
+def queuedDashboardEvent(eventF):
+    """
+    Given a function ``eventF`` which takes any number of arguments,
+    returns a new function which will add ``eventF`` and given arguments
+    to the Dashboard event queue, to be called later.
+    """
+    def queueTheEvent(self, *args, **kwargs):
+        # self is the robot
+        def doTheEvent():
+            logger.info("Event: " + eventF.__name__)
+            return eventF(self, *args, **kwargs)
+        self.app.eventQueue.put(doTheEvent)
+    return queueTheEvent
 
 class Dashboard(remi.App):
     """
@@ -74,24 +100,16 @@ class Dashboard(remi.App):
     ``appCallback`` as arguments, where ``robot`` is the robot object and
     ``appCallback`` is a function that should be called with ``self`` as an
     argument when ``main`` has completed.
+
+    :param css: Whether to use a custom css file. Must be located at 'res/style.css'
     """
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, css=False, **kwargs):
         self.eventQueue = queue.Queue()
-        super(Dashboard, self).__init__(*args, **kwargs)
-
-    def queuedEvent(self, eventF):
-        """
-        Given a function ``eventF`` which takes any number of arguments,
-        returns a new function which will add ``eventF`` and given arguments
-        to the Dashboard event queue, to be called later.
-        """
-        def queueTheEvent(*args, **kwargs):
-            def doTheEvent():
-                print("Event:", eventF.__name__)
-                eventF(*args, **kwargs)
-            self.eventQueue.put(doTheEvent)
-        return queueTheEvent
+        if css:
+            res_path = sea.getRobotPath('res')
+            super(Dashboard, self).__init__(*args, static_file_path={'res':res_path}, **kwargs)
+        else:
+            super(Dashboard,self).__init__(*args, **kwargs)
 
     def clearEvents(self):
         """
@@ -107,6 +125,29 @@ class Dashboard(remi.App):
         Execute all events in the event queue and clear the queue. This should
         be called continuously during teleop.
         """
+        value = None
         while not self.eventQueue.empty():
             event = self.eventQueue.get()
-            event()
+            v = event()
+            if value is None:
+                value = v
+        return value
+
+
+class ToggleButtonGroup:
+
+    def __init__(self):
+        self.buttons = []
+
+    def addButton(self, button, key=None):
+        if key is None:
+            key = button
+        button.key = key
+        self.buttons.append(button)
+
+    def highlight(self, key):
+        for button in self.buttons:
+            if button.key == key:
+                button.style["background"] = "blue"
+            else:
+                button.style["background"] = "rgb(21, 182, 21)"
