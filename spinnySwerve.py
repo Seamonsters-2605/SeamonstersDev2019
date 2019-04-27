@@ -76,9 +76,8 @@ class SwerveBot(sea.GeneratorBot):
                 self.app.doEvents()
             
             self.pathFollower.updateRobotPosition()
-            targetAngle = math.atan2(self.joystick.getRawAxis(3), self.joystick.getRawAxis(4))
-            print("target angle: " + str(targetAngle) + " currentAngle: " + str(self.pathFollower.robotAngle))
-            angularOffset = targetAngle - self.pathFollower.robotAngle
+            targetAngle = math.atan2(sea.deadZone(self.joystick.getRawAxis(3), 0.3), sea.deadZone(-self.joystick.getRawAxis(4), 0.3))
+            angularOffset = sea.circleDistance(targetAngle, self.pathFollower.robotAngle)
             mag = sea.deadZone(self.joystick.getMagnitude())
             mag *= 3 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() + math.pi/2
