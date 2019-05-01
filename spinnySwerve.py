@@ -77,10 +77,10 @@ class SwerveBot(sea.GeneratorBot):
             self.pathFollower.updateRobotPosition()            
             angularOffset = sea.circleDistance(self.pathFollower.robotAngle,  math.atan2(sea.deadZone(-self.joystick.getRawAxis(4), 0.3), sea.deadZone(-self.joystick.getRawAxis(3), 0.3)))
             mag = sea.deadZone(self.joystick.getMagnitude())
-            mag *= 3 # maximum feet per second
+            mag *= 7 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() + math.pi/2
             direction -= self.pathFollower.robotAngle # field oriented mode
-            turn = angularOffset * math.radians(120) # maximum radians per second
+            turn = angularOffset * math.radians(270) # maximum radians per second
 
             self.superDrive.drive(mag, direction, turn)
 
