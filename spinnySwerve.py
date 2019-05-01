@@ -24,7 +24,6 @@ class SwerveBot(sea.GeneratorBot):
         self.setDriveMode(ctre.ControlMode.PercentOutput)
 
         self.robotOrigin = None
-        self.fieldOriented = True
 
         self.app = None
         sea.startDashboard(self, swervebot_app.SwerveBotDashboard)
@@ -80,6 +79,7 @@ class SwerveBot(sea.GeneratorBot):
             mag = sea.deadZone(self.joystick.getMagnitude())
             mag *= 3 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() + math.pi/2
+            direction -= self.pathFollower.robotAngle # field oriented mode
             turn = angularOffset * math.radians(120) # maximum radians per second
 
             self.superDrive.drive(mag, direction, turn)
