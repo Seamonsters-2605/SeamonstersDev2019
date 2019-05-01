@@ -63,7 +63,7 @@ class SwerveBot(sea.GeneratorBot):
         data = sea.readDataFile("testpath.txt")
         yield from self.pathFollower.followPathData(data)
 
-    def teleop(self):
+    def teleop(self):     
         self.resetPositions()
         if self.app is not None:
             self.app.clearEvents()
@@ -75,9 +75,8 @@ class SwerveBot(sea.GeneratorBot):
             if self.app is not None:
                 self.app.doEvents()
             
-            self.pathFollower.updateRobotPosition()
-            targetAngle = math.atan2(sea.deadZone(self.joystick.getRawAxis(3), 0.3), sea.deadZone(-self.joystick.getRawAxis(4), 0.3))
-            angularOffset = sea.circleDistance(targetAngle, self.pathFollower.robotAngle)
+            self.pathFollower.updateRobotPosition()            
+            angularOffset = sea.circleDistance(self.pathFollower.robotAngle,  math.atan2(sea.deadZone(-self.joystick.getRawAxis(4), 0.3), sea.deadZone(-self.joystick.getRawAxis(3), 0.3)))
             mag = sea.deadZone(self.joystick.getMagnitude())
             mag *= 3 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() + math.pi/2
