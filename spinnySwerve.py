@@ -5,8 +5,8 @@ import seamonsters as sea
 import swervebot_app
 import navx
 
-#A swerve drive meant to be controlled with a gamepad/xbox controller where it will face the direction of 1 joystick
-#and drive towards the direction of the other stick.
+#A swerve drive meant to be controlled with a gamepad/xbox controller where it will face 
+#the direction of 1 joystick and drive towards the direction of the other stick.
 
 # rotate motor: 3138 ticks per rotation
 
@@ -75,9 +75,13 @@ class SwerveBot(sea.GeneratorBot):
             if self.app is not None:
                 self.app.doEvents()
             
-            self.pathFollower.updateRobotPosition()       
-            if not (sea.deadZone(-self.joystick.getRawAxis(4), 0.3) == 0 and sea.deadZone(-self.joystick.getRawAxis(3), 0.3) == 0):
-                angularOffset = sea.circleDistance(self.pathFollower.robotAngle,  math.atan2(sea.deadZone(-self.joystick.getRawAxis(4), 0.3), sea.deadZone(-self.joystick.getRawAxis(3), 0.3)))
+            self.pathFollower.updateRobotPosition()  
+            angularOffset = 0     
+            if not (sea.deadZone(-self.joystick.getRawAxis(4), 0.3) == 0 and \
+                sea.deadZone(-self.joystick.getRawAxis(3), 0.3) == 0):
+                angularOffset = sea.circleDistance(self.pathFollower.robotAngle,  \
+                    math.atan2(sea.deadZone(-self.joystick.getRawAxis(4), 0.3), \
+                        sea.deadZone(-self.joystick.getRawAxis(3), 0.3)))
             mag = sea.deadZone(self.joystick.getMagnitude())
             mag *= 7 # maximum feet per second
             direction = -self.joystick.getDirectionRadians() + math.pi/2
